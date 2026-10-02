@@ -1,0 +1,34 @@
+{
+	"name": "murmur",
+	"private": true,
+	"packageManager": "bun@1.2.23",
+	"type": "module",
+	"workspaces": [
+		"packages/*",
+		"app",
+		"server"
+	],
+	"scripts": {
+		"dev": "concurrently --names server,web,ready --prefix-colors blue,magenta,gray --kill-others-on-fail \"bun run --cwd server dev\" \"bun run --cwd app web\" \"wait-on --timeout 20000 http-get://127.0.0.1:${PORT:-3000}/api/health\"",
+		"lint": "biome check --write . && eslint . && knip",
+		"test": "bun test packages server",
+		"e2e": "bun test --timeout 300000 ./e2e/server.e2e.js ./e2e/web.e2e.js",
+		"e2e:server": "bun test --timeout 300000 ./e2e/server.e2e.js",
+		"e2e:web": "bun test --timeout 300000 ./e2e/web.e2e.js"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.5.15",
+		"@murmur/core": "workspace:*",
+		"concurrently": "^10.0.5",
+		"eslint": "10.12.0",
+		"eslint-plugin-react-hooks": "7.1.1",
+		"eslint-plugin-react-you-might-not-need-an-effect": "1.0.2",
+		"knip": "6.39.0",
+		"playwright": "1.63.0",
+		"tinybase": "^10.0.1",
+		"wait-on": "^9.5.1"
+	},
+	"overrides": {
+		"lightningcss": "1.30.1"
+	}
+}

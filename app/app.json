@@ -1,0 +1,91 @@
+{
+	"expo": {
+		"name": "Murmur",
+		"slug": "murmur",
+		"version": "0.1.0",
+		"orientation": "portrait",
+		"icon": "./assets/icon.png",
+		"scheme": "murmur",
+		"userInterfaceStyle": "automatic",
+		"newArchEnabled": true,
+		"android": {
+			"package": "dev.murmur.app",
+			"adaptiveIcon": {
+				"backgroundColor": "#006cb4",
+				"foregroundImage": "./assets/android-icon-foreground.png",
+				"monochromeImage": "./assets/android-icon-monochrome.png"
+			},
+			"predictiveBackGestureEnabled": true,
+			"permissions": [
+				"android.permission.FOREGROUND_SERVICE",
+				"android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+				"android.permission.WAKE_LOCK",
+				"android.permission.POST_NOTIFICATIONS",
+				"android.permission.RECEIVE_BOOT_COMPLETED"
+			]
+		},
+		"web": {
+			"bundler": "metro",
+			"output": "single",
+			"favicon": "./assets/favicon.png"
+		},
+		"plugins": [
+			"expo-router",
+			[
+				"expo-splash-screen",
+				{
+					"image": "./assets/splash-icon.png",
+					"imageWidth": 160,
+					"resizeMode": "contain",
+					"backgroundColor": "#f7fbfe",
+					"dark": {
+						"image": "./assets/splash-icon-dark.png",
+						"backgroundColor": "#0d1012"
+					}
+				}
+			],
+			"expo-sqlite",
+			"expo-font",
+			[
+				"expo-video",
+				{
+					"supportsBackgroundPlayback": true,
+					"supportsPictureInPicture": true
+				}
+			],
+			[
+				"expo-share-intent",
+				{
+					"androidIntentFilters": ["text/*"]
+				}
+			],
+			[
+				"expo-camera",
+				{
+					"cameraPermission": "Murmur uses the camera only to scan a pairing code.",
+					"recordAudioAndroid": false
+				}
+			],
+			[
+				"expo-build-properties",
+				{
+					"android": {
+						"usesCleartextTraffic": true,
+						"enableMinifyInReleaseBuilds": true,
+						"enableShrinkResourcesInReleaseBuilds": true,
+						"buildArchs": ["arm64-v8a"],
+						"extraProguardRules": "-keep class expo.modules.adapters.react.apploader.** { *; }"
+					}
+				}
+			],
+			"./plugins/media3-notification-icon"
+		],
+		"experiments": {
+			"reactCompiler": false
+		},
+		"ios": {
+			"bundleIdentifier": "dev.murmur.app",
+			"supportsTablet": true
+		}
+	}
+}

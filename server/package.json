@@ -1,0 +1,21 @@
+{
+	"name": "@murmur/server",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"main": "src/index.js",
+	"scripts": {
+		"dev": "bun --watch src/index.js",
+		"start": "bun src/index.js",
+		"test": "bun test"
+	},
+	"dependencies": {
+		"@hono/node-server": "^2.1.1",
+		"@murmur/core": "workspace:*",
+		"hono": "^4.13.9",
+		"qrcode": "^1.5.4",
+		"tinybase": "^10.0.1",
+		"uuidv7": "^1.2.1",
+		"ws": "^8.22.0"
+	}
+}

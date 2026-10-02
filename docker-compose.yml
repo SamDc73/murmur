@@ -1,0 +1,38 @@
+# `docker compose up -d` and nothing else: it pulls the images CI publishes for
+# every push to main (amd64 and arm64). DOMAIN and MURMUR_TOKEN come from
+# `.env` in this directory (see README → Self-host). To build them yourself
+# instead: `docker build --target server -t ghcr.io/samdc73/murmur-server .`
+# (and `--target web` for murmur-web).
+
+services:
+  server:
+    image: ghcr.io/samdc73/murmur-server:${MURMUR_TAG:-latest}
+    environment:
+      DATA_DIR: /data
+      MURMUR_TOKEN: ${MURMUR_TOKEN:?set MURMUR_TOKEN in .env}
+      SERVER_NAME: ${SERVER_NAME:-Server}
+      PUBLIC_URL: ${PUBLIC_URL:-https://${DOMAIN}}
+      YTDLP_ARGS: ${YTDLP_ARGS:-}
+    volumes:
+      - data:/data
+    restart: unless-stopped
+
+  caddy:
+    image: ghcr.io/samdc73/murmur-web:${MURMUR_TAG:-latest}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in .env}
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - server
+    restart: unless-stopped
+
+volumes:
+  data:          # murmur.sqlite + media/ — back this up
+  caddy_data:    # certificates
+  caddy_config:

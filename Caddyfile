@@ -1,0 +1,23 @@
+# One host: the web app at the root, the API and the sync socket on the server.
+# Caddy provisions TLS by itself. On a LAN or Tailscale name with no public
+# DNS, add `tls internal` inside the block.
+
+{$DOMAIN} {
+	encode zstd gzip
+
+	handle /api/* {
+		reverse_proxy server:3000
+	}
+
+	# TinyBase sync. reverse_proxy upgrades WebSockets on its own.
+	handle /sync {
+		reverse_proxy server:3000
+	}
+
+	handle {
+		root * /srv/www
+		# `web.output: "single"` — every route is index.html.
+		try_files {path} /index.html
+		file_server
+	}
+}

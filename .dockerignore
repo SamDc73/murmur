@@ -1,0 +1,11 @@
+# Only the source goes into the build; everything else is rebuilt inside.
+**/node_modules
+**/dist
+**/.expo
+.git
+.agents
+app/android
+app/ios
+server/data
+**/*.log
+.env

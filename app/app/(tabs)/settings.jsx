@@ -1,0 +1,224 @@
+import { AUDIO_FORMATS, bytes, COPY_STATE, normaliseServerUrl, VALUES, VIDEO_HEIGHTS } from "@murmur/core"
+import Constants from "expo-constants"
+import { useRouter } from "expo-router"
+import ChevronDown from "lucide-react-native/icons/chevron-down"
+import ChevronUp from "lucide-react-native/icons/chevron-up"
+import ScanQrCode from "lucide-react-native/icons/scan-qr-code"
+import { useState } from "react"
+import { ScrollView, View } from "react-native"
+import { PairCode } from "../../components/PairCode"
+import { ScreenHeader } from "../../components/ScreenHeader"
+import { Button } from "../../components/ui/Button"
+import { Group, Row, RowField } from "../../components/ui/Group"
+import { IconButton } from "../../components/ui/IconButton"
+import { Select } from "../../components/ui/Select"
+import { Text } from "../../components/ui/Text"
+import { Toggle } from "../../components/ui/Toggle"
+import { CAN_DOWNLOAD } from "../../downloads/phone"
+import { useActions, useCopiesByItem, useDeviceId, useDevices, useLocal, useSetting } from "../../store/hooks"
+import { LOCAL_KEYS } from "../../store/local"
+import { ORIGIN } from "../../store/origin"
+import { useServerInfo } from "../../store/server"
+
+const VIDEO = VIDEO_HEIGHTS.map((value) => ({ value, label: value === 0 ? "Off" : `${value}p` }))
+const AUDIO = AUDIO_FORMATS.map((value) => ({ value, label: value }))
+
+export default function SettingsScreen() {
+	return (
+		<View className="flex-1 bg-background">
+			<ScreenHeader title="Settings" />
+			<ScrollView contentContainerStyle={{ paddingBottom: 32 }} keyboardShouldPersistTaps="handled">
+				<View className="mx-auto w-full max-w-form gap-lg px-md pt-xs">
+					<ServerGroup />
+					<DownloadsGroup />
+					{CAN_DOWNLOAD ? <PhoneGroup /> : null}
+					<AboutGroup />
+				</View>
+			</ScrollView>
+		</View>
+	)
+}
+
+function ServerGroup() {
+	const router = useRouter()
+	const serverUrl = useLocal(LOCAL_KEYS.serverUrl)
+	const token = useLocal(LOCAL_KEYS.token)
+	const syncState = useLocal(LOCAL_KEYS.syncState)
+	const error = useLocal(LOCAL_KEYS.lastSyncError)
+	const { pair } = useActions()
+	// What you're typing, until saved; otherwise what's stored — so a pairing
+	// that lands while this screen is open shows at once.
+	const [draftUrl, setUrl] = useState(null)
+	const [draftToken, setSecret] = useState(null)
+	const url = draftUrl ?? serverUrl
+	const secret = draftToken ?? token
+	const [pairing, setPairing] = useState(false)
+	const info = useServerInfo(syncState === "online")
+	const sameOrigin = ORIGIN !== "" && serverUrl === ORIGIN
+	const changed = normaliseServerUrl(url) !== serverUrl || secret.trim() !== token
+
+	function save() {
+		pair({ serverUrl: normaliseServerUrl(url), token: secret.trim() })
+		setUrl(null)
+		setSecret(null)
+	}
+
+	return (
+		<Group title="Server">
+			{sameOrigin ? (
+				<Row label="Address" value={serverUrl.replace(/^https?:\/\//, "")} />
+			) : (
+				<Row label="Address">
+					<RowField value={url} onChangeText={setUrl} placeholder="https://murmur.example.com" inputMode="url" />
+					{CAN_DOWNLOAD ? (
+						<IconButton
+							as={ScanQrCode}
+							size="sm"
+							label="Scan a pairing code"
+							onPress={() => router.push("/pair")}
+							iconClassName="text-on-surface-variant"
+						/>
+					) : null}
+				</Row>
+			)}
+			<Row label="Token">
+				<RowField
+					value={secret}
+					onChangeText={setSecret}
+					placeholder="MURMUR_TOKEN"
+					secureTextEntry
+					onSubmitEditing={save}
+				/>
+				{changed ? (
+					<Button variant="tonal" size="sm" onPress={save}>
+						<Text>Save</Text>
+					</Button>
+				) : null}
+			</Row>
+			<Row label="Status" value={status(syncState, error, token, info.data)} />
+			{!CAN_DOWNLOAD && syncState === "online" ? (
+				<Row
+					label="Pair a phone"
+					icon={pairing ? ChevronUp : ChevronDown}
+					onPress={() => setPairing((open) => !open)}
+				/>
+			) : null}
+			{pairing ? <PairCode serverUrl={serverUrl} token={token} /> : null}
+		</Group>
+	)
+}
+
+function status(syncState, error, token, info) {
+	if (syncState === "online") return info?.ytdlp ? `Connected · yt-dlp ${info.ytdlp}` : "Connected"
+	if (syncState === "connecting") return "Connecting…"
+	if (syncState === "locked") return token ? "Wrong token" : "Enter the server’s token to connect."
+	if (syncState === "offline") return `Offline${error ? ` · ${error}` : ""}`
+	return "No server — links wait for one"
+}
+
+function DownloadsGroup() {
+	const keepOnServer = useSetting(VALUES.keepOnServer)
+	const videoHeight = useSetting(VALUES.videoHeight)
+	const audioFormat = useSetting(VALUES.audioFormat)
+	const devices = useDevices()
+	const { setSetting } = useActions()
+	// Only phones keep files; browsers stream.
+	const phones = [...new Set(Object.values(devices).flatMap((d) => (d.kind === "phone" ? [d.name] : [])))]
+
+	return (
+		<Group title="Downloads" footer={downloadsNote(phones, keepOnServer)}>
+			<Row label="Video">
+				<Select
+					label="Video"
+					value={videoHeight}
+					options={VIDEO}
+					onChange={(value) => setSetting(VALUES.videoHeight, value)}
+				/>
+			</Row>
+			<Row label="Audio format">
+				<Select
+					label="Audio format"
+					value={audioFormat}
+					options={AUDIO}
+					onChange={(value) => setSetting(VALUES.audioFormat, value)}
+				/>
+			</Row>
+			{phones.length > 0 ? (
+				<Row label="Keep a copy on the server">
+					<Toggle
+						value={keepOnServer}
+						onChange={(value) => setSetting(VALUES.keepOnServer, value)}
+						label="Keep a copy on the server"
+					/>
+				</Row>
+			) : null}
+		</Group>
+	)
+}
+
+// Where the files end up, said once under the group.
+function downloadsNote(phones, keepOnServer) {
+	const video = "Audio alone is about a tenth the size of video. Any episode can get its video from its menu."
+	if (phones.length === 0 || keepOnServer) return video
+	return `${video} Once ${phones.join(" or ")} has an episode, the server deletes its copy.`
+}
+
+function PhoneGroup() {
+	const autoDownload = useLocal(LOCAL_KEYS.autoDownload)
+	const wifiOnly = useLocal(LOCAL_KEYS.wifiOnly)
+	const deleteAfterPlay = useLocal(LOCAL_KEYS.deleteAfterPlay)
+	const deviceId = useDeviceId()
+	const copiesByItem = useCopiesByItem()
+	const { setLocal, removeAllHere } = useActions()
+
+	let used = 0
+	let count = 0
+	for (const copies of Object.values(copiesByItem)) {
+		const mine = copies[deviceId]
+		if (mine?.state !== COPY_STATE.ready) continue
+		used += Number(mine.bytes) || 0
+		count++
+	}
+
+	return (
+		<Group title="This phone">
+			<Row label="Download automatically">
+				<Toggle
+					value={autoDownload}
+					onChange={(value) => setLocal(LOCAL_KEYS.autoDownload, value)}
+					label="Download automatically"
+				/>
+			</Row>
+			<Row label="Only on Wi‑Fi">
+				<Toggle value={wifiOnly} onChange={(value) => setLocal(LOCAL_KEYS.wifiOnly, value)} label="Only on Wi‑Fi" />
+			</Row>
+			<Row label="Delete after playing">
+				<Toggle
+					value={deleteAfterPlay}
+					onChange={(value) => setLocal(LOCAL_KEYS.deleteAfterPlay, value)}
+					label="Delete after playing"
+				/>
+			</Row>
+			<Row label="Stored" value={count === 0 ? "Nothing" : `${count} · ${bytes(used)}`}>
+				{count > 0 ? (
+					<Button variant="outlined" size="sm" onPress={removeAllHere}>
+						<Text>Clear</Text>
+					</Button>
+				) : null}
+			</Row>
+		</Group>
+	)
+}
+
+function AboutGroup() {
+	const deviceName = useLocal(LOCAL_KEYS.deviceName)
+	const { renameDevice } = useActions()
+	return (
+		<Group title="About">
+			<Row label="This device">
+				<RowField value={deviceName} onChangeText={renameDevice} accessibilityLabel="This device’s name" />
+			</Row>
+			<Row label="Murmur" value={Constants.expoConfig?.version ?? "dev"} />
+		</Group>
+	)
+}

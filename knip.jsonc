@@ -1,0 +1,17 @@
+{
+	// Dead code across files: unused files, exports and dependencies — what
+	// neither Biome nor ESLint can see. Runs as part of `bun run lint`.
+	"$schema": "https://unpkg.com/knip@6/schema.json",
+	"workspaces": {
+		"app": {
+			// Expo Router's screens, Metro's platform files (picked by extension),
+			// the local config plugin and the logo script.
+			"entry": ["app/**/*.{js,jsx}", "**/*.web.{js,jsx}", "plugins/*.js", "scripts/*.mjs"],
+			// react-native-sortables loads expo-haptics itself for drag feedback;
+			// expo-updates is assumed by knip's Expo plugin but not used.
+			"ignoreDependencies": ["expo-haptics", "expo-updates"],
+			// EAS runs from its own CLI (bunx eas-cli), not a dependency.
+			"ignoreBinaries": ["eas"]
+		}
+	}
+}

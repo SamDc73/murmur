@@ -1,0 +1,237 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   Cyanotype & Verdigris — THE design tokens (Murmur).
+
+   Single source of truth for every colour and dimension in this app. Nothing
+   anywhere else may define a colour, spacing value, font size or radius.
+   Colours are Material 3 role names (primary, on-primary, surface…), the
+   vocabulary every component speaks. They are fixed brand colours, never the
+   wallpaper's: the app and its icon are one palette, everywhere.
+
+   Computed in OKLCH with Ottosson's matrices and gamut-fitted into sRGB by
+   bisection on chroma — no coordinate here sits outside sRGB.
+
+   Cyanotype is the primary family. Verdigris is the tertiary family: each
+   primary token with its OKLCH lightness and chroma kept and its hue turned
+   to verdigris (174.6°, colorjs.io), so the two families step alike. One
+   nudge: dark tertiary is +0.015 L so it holds 3:1 on #006cb4, because it is
+   also the logo's resting ball. The logo is three tokens and nothing else:
+   primary (light) ground, on-primary strokes, tertiary (dark) ball.
+   ───────────────────────────────────────────────────────────────────────── */
+
+@theme {
+	/* Golden-ratio spacing — p-md, gap-lg, m-xl … */
+	--spacing-3xs: 0.146rem;
+	--spacing-2xs: 0.236rem;
+	--spacing-xs: 0.382rem;
+	--spacing-sm: 0.618rem;
+	--spacing-md: 1rem;
+	--spacing-lg: 1.618rem;
+	--spacing-xl: 2.618rem;
+	--spacing-2xl: 4.236rem;
+	--spacing-3xl: 6.854rem;
+	--spacing-4xl: 11.09rem;
+
+	/* Type scale (φ and √φ steps) */
+	--text-caption: 0.618rem;
+	--text-label: 0.786rem;
+	--text-body: 1rem;
+	--text-callout: 1.128rem;
+	--text-subheading: 1.272rem;
+	--text-heading: 1.618rem;
+	--text-title3: 2.058rem;
+	--text-title2: 2.618rem;
+	--text-title1: 3.33rem;
+	--text-display2: 4.236rem;
+	--text-display1: 6.854rem;
+
+	/* Radius */
+	--radius-xs: 0.236rem;
+	--radius-sm: 0.382rem;
+	--radius-md: 0.618rem;
+	--radius-lg: 1rem;
+	--radius-xl: 1.618rem;
+
+	/* Type — the template's three faces. The names are the families expo-font
+	   registers (see app/_layout.jsx), so one token works on native and web. */
+	--font-display: Fraunces_600SemiBold;
+	--font-display-medium: Fraunces_500Medium;
+	--font-body: InstrumentSans_400Regular;
+	--font-body-medium: InstrumentSans_500Medium;
+	--font-body-semibold: InstrumentSans_600SemiBold;
+	--font-mono: IBMPlexMono_500Medium;
+	--font-mono-regular: IBMPlexMono_400Regular;
+	--text-eyebrow: 0.66rem;
+	--text-chip: 0.68rem;
+	--text-time: 0.75rem;
+	--text-line: 0.93rem;
+	--tracking-eyebrow: 0.14em;
+	--tracking-chip: 0.11em;
+
+	/* Shapes the template uses */
+	--radius-chip: 0.25rem;
+	--radius-seg: 0.4rem;
+	--radius-panel: 0.7rem;
+
+	/* The rail and the bar, as the palette page draws them */
+	--spacing-rail: 11.5rem;
+	--spacing-navitem: 0.42rem;
+	--spacing-icon: 1.15rem;
+	--text-tab: 0.64rem;
+
+	/* The queue row's thumbnail (16:9), the mini player's artwork, tap targets, icon sizes */
+	--spacing-thumb: 5.5rem;
+	--spacing-thumb-h: 3.1rem;
+	--spacing-art: 3rem;
+	--spacing-tap: 2.75rem;
+	--spacing-tap-lg: 3.5rem;
+	--spacing-play: 4.5rem;
+	--spacing-icon-sm: 0.85rem;
+	--spacing-icon-lg: 1.6rem;
+	--spacing-icon-xl: 2.2rem;
+	/* The mark, large: an empty screen's one picture. */
+	--spacing-mark: 4.236rem;
+	--spacing-handle: 2rem;
+	--spacing-menu: 13rem;
+	--spacing-dialog: 24rem;
+	--spacing-player: 26rem;
+
+	/* Reading width on wide screens — a queue never runs the full width of a monitor. */
+	--container-page: 52rem;
+	/* A settings form, and Now Playing's two columns on a desktop. */
+	--container-form: 40rem;
+	--container-wide: 76rem;
+	--container-copy: 19rem;
+	/* Past this width the rail replaces the bottom bar and gutters widen — the template's 46rem. */
+	--breakpoint-wide: 46rem;
+	--shadow-panel: 0 1px 2px rgb(25 32 40 / 0.05), 0 10px 30px -18px rgb(0 108 180 / 0.28);
+
+	/* Washes and hairlines — the template's translucent tints, pre-composited on
+	   this theme's surface so contrast is knowable and RN needs no alpha. */
+	--color-primary-wash: #ebf3f9;
+	--color-primary-line: #99c4e1;
+	--color-success-wash: #ebf0f0;
+	--color-success-line: #93b5b5;
+	--color-error-wash: #fceaea;
+	--color-error-line: #f0aeaf;
+	--color-warning-wash: #fbf2e3;
+	--color-warning-line: #d9b57a;
+	--color-tertiary-wash: #eaf4f1;
+	--color-tertiary-line: #94cbbb;
+	/* Behind a dialog: the screen, dimmed. Translucent on purpose. */
+	--color-veil: rgba(13, 16, 18, 0.38);
+
+	/* Material 3 colour roles — light */
+	--color-primary: #006cb4;
+	--color-on-primary: #ffffff;
+	--color-primary-container: #cae5ff;
+	--color-on-primary-container: #001c37;
+	--color-secondary: #506c87;
+	--color-on-secondary: #ffffff;
+	--color-secondary-container: #cae5ff;
+	--color-on-secondary-container: #021c33;
+	--color-tertiary: #007e64;
+	--color-on-tertiary: #ffffff;
+	--color-tertiary-container: #c3ecdf;
+	--color-on-tertiary-container: #002419;
+	--color-error: #e1595b;
+	--color-on-error: #ffffff;
+	--color-error-container: #ffd6d3;
+	--color-on-error-container: #3c0004;
+	--color-success: #004746;
+	--color-on-success: #ffffff;
+	--color-success-container: #8cf7f2;
+	--color-on-success-container: #002020;
+	--color-warning: #905c00;
+	--color-on-warning: #ffffff;
+	--color-warning-container: #ffdaae;
+	--color-on-warning-container: #291500;
+	--color-info: #007786;
+	--color-on-info: #ffffff;
+	--color-info-container: #a0f1ff;
+	--color-on-info-container: #002025;
+	--color-background: #f7fbfe;
+	--color-on-background: #1d2022;
+	--color-surface: #f7fbfe;
+	--color-on-surface: #1d2022;
+	--color-surface-variant: #d9e2ec;
+	--color-on-surface-variant: #4f565e;
+	--color-surface-dim: #d1d5d8;
+	--color-surface-bright: #f9fcff;
+	--color-surface-container-lowest: #ffffff;
+	--color-surface-container-low: #f0f4f7;
+	--color-surface-container: #eaedf1;
+	--color-surface-container-high: #e3e7ea;
+	--color-surface-container-highest: #dde0e3;
+	--color-outline: #6a737b;
+	--color-outline-variant: #c6cfd8;
+	--color-shadow: #000000;
+	--color-scrim: #000000;
+	--color-inverse-surface: #292c2e;
+	--color-inverse-on-surface: #ebeff2;
+	--color-inverse-primary: #78beff;
+}
+
+@media (prefers-color-scheme: dark) {
+	:root {
+		--color-primary: #78beff;
+		--color-on-primary: #25292e;
+		--color-primary-container: #004a7f;
+		--color-on-primary-container: #c4e2ff;
+		--color-secondary: #9cbbda;
+		--color-on-secondary: #25292e;
+		--color-secondary-container: #2f4a64;
+		--color-on-secondary-container: #c4e2ff;
+		--color-tertiary: #5cd5b8;
+		--color-on-tertiary: #232a28;
+		--color-tertiary-container: #005844;
+		--color-on-tertiary-container: #bceadc;
+		--color-error: #d24c50;
+		--color-on-error: #2e2727;
+		--color-error-container: #8b001a;
+		--color-on-error-container: #ffd1cf;
+		--color-success: #7be6e2;
+		--color-on-success: #232a2a;
+		--color-success-container: #005351;
+		--color-on-success-container: #88f3ef;
+		--color-warning: #f2a635;
+		--color-on-warning: #2c2824;
+		--color-warning-container: #643e00;
+		--color-on-warning-container: #ffd6a5;
+		--color-info: #5fc9db;
+		--color-on-info: #232a2c;
+		--color-info-container: #00525d;
+		--color-on-info-container: #93efff;
+		--color-background: #0d1012;
+		--color-on-background: #ebeff2;
+		--color-surface: #0d1012;
+		--color-on-surface: #ebeff2;
+		--color-surface-variant: #2a3138;
+		--color-on-surface-variant: #9da6ae;
+		--color-surface-dim: #0d1012;
+		--color-surface-bright: #3b3d40;
+		--color-surface-container-lowest: #060709;
+		--color-surface-container-low: #141619;
+		--color-surface-container: #171a1c;
+		--color-surface-container-high: #222427;
+		--color-surface-container-highest: #2e3133;
+		--color-outline: #79818a;
+		--color-outline-variant: #2a3138;
+		--color-shadow: #000000;
+		--color-scrim: #000000;
+		--color-inverse-surface: #e1e5e8;
+		--color-inverse-on-surface: #222427;
+		--color-inverse-primary: #006cb4;
+		--color-primary-wash: #1b2632;
+		--color-primary-line: #3f5d78;
+		--color-success-wash: #1e2e34;
+		--color-success-line: #3f6e6d;
+		--color-error-wash: #362026;
+		--color-error-line: #6f3136;
+		--color-warning-wash: #2b2a27;
+		--color-warning-line: #7a6135;
+		--color-tertiary-wash: #162924;
+		--color-tertiary-line: #356458;
+		--color-veil: rgba(0, 0, 0, 0.6);
+		--shadow-panel: 0 1px 0 rgb(235 239 242 / 0.03), 0 16px 40px -26px rgb(0 0 0 / 0.85);
+	}
+}
