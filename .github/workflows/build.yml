@@ -112,9 +112,13 @@ jobs:
       - name: Generate the native project
         working-directory: app
         run: bunx expo prebuild --platform android --no-install
+      # The generated project gives Gradle a 2 GB heap, too little for R8 on
+      # a runner; it has 16 GB.
       - name: Build the release APK
         working-directory: app/android
-        run: ./gradlew assembleRelease --no-daemon
+        run: |
+          sed -i 's/^org.gradle.jvmargs=.*/org.gradle.jvmargs=-Xmx6g -XX:MaxMetaspaceSize=1g/' gradle.properties
+          ./gradlew assembleRelease --no-daemon
       - run: cp app/android/app/build/outputs/apk/release/app-release.apk murmur.apk
       - uses: actions/upload-artifact@v7
         with:
