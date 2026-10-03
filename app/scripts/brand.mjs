@@ -1,7 +1,8 @@
 // The logo's files, drawn from one geometry (@murmur/core's brand.js) in the
 // colours of tokens.css — so the icon, the splash and the favicon always match
 // the app. Rerun after changing either:   bun run brand   (from app/)
-import { readFileSync, writeFileSync } from "node:fs"
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs"
+import { generateAsync as packIco } from "@expo/image-utils/build/Ico.js"
 import { FAVICON, MARK } from "@murmur/core/brand"
 import { chromium } from "playwright"
 
@@ -42,17 +43,27 @@ const files = [
 	["assets/android-icon-monochrome.png", 1024, canvas(mark("#000", "#000", 72 / 108))],
 	["assets/splash-icon.png", 1024, canvas(mark(light.ink, light.dot))],
 	["assets/splash-icon-dark.png", 1024, canvas(mark(dark.ink, dark.dot))],
-	["assets/favicon.png", 192, favicon],
 ]
 
 const browser = await chromium.launch()
 const page = await browser.newPage({ viewport: { width: 1024, height: 1024 } })
-for (const [path, size, svg] of files) {
+const render = async (svg, size) => {
 	const sized = svg.replace("<svg ", `<svg width="${size}" height="${size}" `)
 	await page.setContent(`<body style="margin:0;background:transparent">${sized}</body>`)
-	await page.locator("svg").screenshot({ path: here(path).pathname, omitBackground: true })
+	return page.locator("svg").screenshot({ omitBackground: true })
+}
+for (const [path, size, svg] of files) {
+	writeFileSync(here(path), await render(svg, size))
 	console.log(`${path}  ${size}×${size}`)
 }
+// The tab icon is drawn at each size it's shown at, not shrunk from a big
+// one, so 16 px stays crisp. Expo serves public/favicon.ico as it is.
+const tabSizes = [16, 32, 48]
+const tabIcons = []
+for (const size of tabSizes) tabIcons.push(await render(favicon, size))
+mkdirSync(here("public"), { recursive: true })
+writeFileSync(here("public/favicon.ico"), await packIco(tabIcons))
+console.log(`public/favicon.ico  ${tabSizes.join(", ")} px`)
 await browser.close()
 
 // The status-bar icon while playing: the mark as a white Android vector, its

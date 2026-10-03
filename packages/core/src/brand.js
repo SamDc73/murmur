@@ -14,10 +14,11 @@ export const MARK = {
 	viewBox: "168 131 690 690",
 }
 
-// The same idea redrawn for 16 px: on a tile, thicker strokes, a bigger ball.
+// The same idea redrawn for a browser tab, on a rounded tile: centred, thicker
+// strokes, a wider second bounce so its gap survives 16 px, a bigger ball.
 export const FAVICON = {
-	path: "M138 838 A165 640 0 0 1 467 838 A86 282 0 0 1 640 838",
-	stroke: 147,
-	ball: { cx: 861, cy: 813, r: 99 },
-	tileRadius: 160,
+	path: "M138 716 A155 405 0 0 1 448 716 A112 168 0 0 1 672 716",
+	stroke: 128,
+	ball: { cx: 860, cy: 690, r: 92 },
+	tileRadius: 200,
 }
