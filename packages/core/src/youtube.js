@@ -42,23 +42,3 @@ function parseStart(value) {
 	if (!match) return 0
 	return Number(match[1] ?? 0) * 3600 + Number(match[2] ?? 0) * 60 + Number(match[3] ?? 0)
 }
-
-// A paste can be one link or a whole list — one per line, comma-separated,
-// or even run together with nothing between them (a single-line field eats
-// newlines). Every recognisable YouTube link comes back once, in order.
-export function extractYouTubeLinks(text) {
-	const seen = new Set()
-	const links = []
-	const spaced = String(text ?? "")
-		// "…v=IDhttps://youtu.be/…" → a space before every scheme
-		.replace(/https?:\/\//gi, " $&")
-		// "…v=IDyoutu.be/…" → a space before a bare host glued to something
-		.replace(/([^\s./])((?:www\.|m\.|music\.)?youtu(?:\.be|be\.com)\/)/gi, "$1 $2")
-	for (const token of spaced.split(/[\s<>"'()[\]{},;]+/)) {
-		const parsed = parseYouTubeUrl(token)
-		if (parsed === null || seen.has(parsed.url)) continue
-		seen.add(parsed.url)
-		links.push(parsed)
-	}
-	return links
-}

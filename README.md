@@ -1,6 +1,6 @@
 # Murmur
 
-Paste YouTube links — one or a whole list — and listen to them like a podcast queue: top to bottom, then it stops. Self-hosted.
+Paste YouTube links — one, a whole list, or a Google Doc full of them — and listen like a podcast queue: top to bottom, then it stops. Self-hosted.
 
 - Your server fetches everything with yt-dlp; the phone and the web app share one queue, live.
 - The phone keeps its own copies, so it plays without the server; downloads go to the server, the phone, or both.
@@ -20,6 +20,20 @@ On a home network without a domain: `DOMAIN=:80` and `PUBLIC_URL=http://<server 
 ## Phone
 
 Install [the latest APK](https://github.com/SamDc73/murmur/releases/download/latest/murmur.apk), then scan the QR code from the web app's Settings → Pair a phone (or the server log).
+
+## API
+
+Same token, as `Authorization: Bearer <token>`:
+
+```
+GET    /api/queue        the queue, in order
+GET    /api/history      played, newest first
+POST   /api/queue        any text with YouTube or Google Docs links
+PATCH  /api/queue/:id    {"index": 0} moves it · {"played": true} or false
+DELETE /api/queue/:id
+```
+
+`curl -H "Authorization: Bearer $TOKEN" -d "https://youtu.be/jNQXAC9IVRw" http://<server>/api/queue`
 
 ## Develop
 

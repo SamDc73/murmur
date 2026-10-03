@@ -199,7 +199,7 @@ describe("adding", () => {
 	test("a paste with no link in it says so, and adds nothing", async () => {
 		await page.goto(`${web.url}/`, { waitUntil: "networkidle" })
 		await paste("have a listen to this one")
-		await see(page.getByText("No YouTube link in that")).waitFor()
+		await see(page.getByText("No YouTube or Google Docs link in that")).waitFor()
 		expect(queueIds()).toEqual([])
 	})
 

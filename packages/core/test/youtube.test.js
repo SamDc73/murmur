@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test"
-import { extractYouTubeLinks, parseYouTubeUrl } from "../src/youtube.js"
+import { extractLinks } from "../src/links.js"
+import { parseYouTubeUrl } from "../src/youtube.js"
 
 describe("parseYouTubeUrl", () => {
 	test("watch, short, mobile, music and nocookie hosts all canonicalise", () => {
@@ -44,7 +45,7 @@ describe("parseYouTubeUrl", () => {
 	})
 })
 
-describe("extractYouTubeLinks", () => {
+describe("extractLinks", () => {
 	test("finds every link in a pasted list, once each, in order", () => {
 		const text = `
 			ep 1: https://youtu.be/dQw4w9WgXcQ
@@ -52,19 +53,19 @@ describe("extractYouTubeLinks", () => {
 			https://youtu.be/dQw4w9WgXcQ again
 			https://example.com/nope
 		`
-		expect(extractYouTubeLinks(text).map((l) => l.videoId)).toEqual(["dQw4w9WgXcQ", "jNQXAC9IVRw"])
+		expect(extractLinks(text).map((l) => l.videoId)).toEqual(["dQw4w9WgXcQ", "jNQXAC9IVRw"])
 	})
 	test("lists in every shape: lines, commas, and links run together", () => {
 		const lines =
 			"https://youtu.be/dQw4w9WgXcQ\nhttps://youtu.be/jNQXAC9IVRw\nhttps://www.youtube.com/watch?v=9bZkp7q19f0"
-		expect(extractYouTubeLinks(lines).map((l) => l.videoId)).toEqual(["dQw4w9WgXcQ", "jNQXAC9IVRw", "9bZkp7q19f0"])
+		expect(extractLinks(lines).map((l) => l.videoId)).toEqual(["dQw4w9WgXcQ", "jNQXAC9IVRw", "9bZkp7q19f0"])
 		const commas = "https://youtu.be/dQw4w9WgXcQ, https://youtu.be/jNQXAC9IVRw;https://youtu.be/9bZkp7q19f0"
-		expect(extractYouTubeLinks(commas).length).toBe(3)
+		expect(extractLinks(commas).length).toBe(3)
 		// What a single-line field makes of a multi-line paste: newlines gone.
 		const glued = "https://youtu.be/dQw4w9WgXcQhttps://www.youtube.com/watch?v=jNQXAC9IVRwyoutu.be/9bZkp7q19f0"
-		expect(extractYouTubeLinks(glued).map((l) => l.videoId)).toEqual(["dQw4w9WgXcQ", "jNQXAC9IVRw", "9bZkp7q19f0"])
+		expect(extractLinks(glued).map((l) => l.videoId)).toEqual(["dQw4w9WgXcQ", "jNQXAC9IVRw", "9bZkp7q19f0"])
 	})
 	test("empty for nothing", () => {
-		expect(extractYouTubeLinks("")).toEqual([])
+		expect(extractLinks("")).toEqual([])
 	})
 })

@@ -46,7 +46,7 @@ export default function Root() {
 // Things that run for the life of the app and draw nothing.
 function Boot() {
 	useSync()
-	const { addLinks } = useActions()
+	const { addText } = useActions()
 	const router = useRouter()
 	const { hasShareIntent, shareIntent, resetShareIntent } = useShareIntent()
 
@@ -57,10 +57,10 @@ function Boot() {
 	useEffect(() => {
 		if (!hasShareIntent) return
 		const text = shareIntent?.webUrl || shareIntent?.text || ""
-		addLinks(text)
+		addText(text)
 		resetShareIntent()
 		router.navigate("/")
-	}, [hasShareIntent, shareIntent, addLinks, resetShareIntent, router])
+	}, [hasShareIntent, shareIntent, addText, resetShareIntent, router])
 
 	return null
 }

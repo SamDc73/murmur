@@ -16,6 +16,11 @@ export function keysAfter(lastKey, count) {
 	return generateNKeysBetween(lastKey || null, null, count)
 }
 
+/** `count` keys that sort between `before` and `after` (either may be null). */
+export function keysBetween(before, after, count) {
+	return generateNKeysBetween(before || null, after || null, count)
+}
+
 /** Rows of `items` as [id, row] pairs, the queue only, in play order. */
 export function queueOf(itemsTable) {
 	return Object.entries(itemsTable)

@@ -2,12 +2,13 @@ import { readdirSync, statSync, unlinkSync } from "node:fs"
 import { basename, join } from "node:path"
 import {
 	COPY_STATE,
+	classifyLinks,
 	copyId,
 	DEVICE_SERVER,
-	keysAfter,
-	lastKey,
+	keysBetween,
 	newCopy,
 	newItem,
+	parseGoogleDocUrl,
 	queueOf,
 	setting,
 	TABLES,
@@ -15,6 +16,7 @@ import {
 	wantedKind,
 } from "@murmur/core"
 import { uuidv7 } from "uuidv7"
+import { readDoc } from "./docs.js"
 import { metadataFrom } from "./ytdlp.js"
 
 // What the server does with the store, and the only place it writes to it.
@@ -123,6 +125,8 @@ export function createPipeline({ store, config, tools, log = console }) {
 	async function probeItem({ id }) {
 		const row = store.getRow(TABLES.items, id)
 		if (!row?.url) return
+		const doc = parseGoogleDocUrl(row.url)
+		if (doc !== null) return importDoc(id, doc)
 		const playlistOnly = row.videoId === "" && /[?&]list=/.test(row.url)
 		log.info(`[pipeline] probe ${row.url}`)
 		try {
@@ -142,34 +146,62 @@ export function createPipeline({ store, config, tools, log = console }) {
 		}
 	}
 
-	// The pasted row becomes the first entry; the rest are appended to the end
-	// of the queue, in playlist order, each left for its own full probe.
 	function expandPlaylist(id, info) {
 		const entries = info.entries.filter((entry) => entry && typeof entry.id === "string" && entry.id.length === 11)
 		if (entries.length === 0) {
 			store.setPartialRow(TABLES.items, id, { error: "Playlist has no playable videos" })
 			return
 		}
+		expandInPlace(
+			id,
+			entries.map((entry) => ({
+				url: `https://www.youtube.com/watch?v=${entry.id}`,
+				videoId: entry.id,
+				...hint(entry),
+			}))
+		)
+	}
+
+	// A Google Doc's YouTube links take its place, minus any already queued or
+	// played. (A playlist among them expands in turn, on its own probe.)
+	async function importDoc(id, doc) {
+		log.info(`[pipeline] import ${doc.url}`)
+		try {
+			const links = await tools.readDoc(doc.docUrl)
+			if (!store.hasRow(TABLES.items, id)) return
+			const { fresh } = classifyLinks(links, store.getTable(TABLES.items))
+			if (fresh.length === 0) {
+				const error = links.length === 0 ? "No YouTube links in that doc" : "Everything in that doc is already here"
+				store.setPartialRow(TABLES.items, id, { error })
+				return
+			}
+			expandInPlace(
+				id,
+				fresh.map((link) => ({ url: link.url, videoId: link.videoId, position: link.start }))
+			)
+		} catch (error) {
+			if (store.hasRow(TABLES.items, id)) {
+				store.setPartialRow(TABLES.items, id, { error: String(error.message ?? error).slice(0, 300) })
+			}
+		}
+	}
+
+	// A pasted list — a playlist, a doc — opens up where it was pasted: its
+	// row becomes the first entry and the rest follow it, in order, each left
+	// for its own full probe.
+	function expandInPlace(id, rows) {
+		const queue = queueOf(store.getTable(TABLES.items))
+		const at = queue.findIndex(([rowId]) => rowId === id)
+		const order = store.getCell(TABLES.items, id, "order")
+		const keys = keysBetween(order, at === -1 ? null : (queue[at + 1]?.[1].order ?? null), rows.length - 1)
+		const [first, ...rest] = rows
+		const now = Date.now()
 		store.transaction(() => {
-			const [first, ...rest] = entries
-			store.setPartialRow(TABLES.items, id, {
-				...hint(first),
-				url: `https://www.youtube.com/watch?v=${first.id}`,
-				videoId: first.id,
-				resolvedAt: 0,
-				error: "",
-			})
-			const keys = keysAfter(lastKey(queueOf(store.getTable(TABLES.items))), rest.length)
-			const now = Date.now()
-			rest.forEach((entry, index) => {
+			store.setPartialRow(TABLES.items, id, { ...first, resolvedAt: 0, error: "" })
+			rest.forEach((row, index) => {
 				store.setRow(TABLES.items, uuidv7(), {
-					...newItem({
-						url: `https://www.youtube.com/watch?v=${entry.id}`,
-						videoId: entry.id,
-						order: keys[index],
-						addedAt: now + index,
-					}),
-					...hint(entry),
+					...newItem({ url: row.url, videoId: row.videoId, order: keys[index], addedAt: now + index }),
+					...row,
 				})
 			})
 		})
@@ -355,6 +387,7 @@ export function realTools(config, ytdlp) {
 		probe: (url, options) => ytdlp.probe(config, url, options),
 		download: (item, onProgress) => ytdlp.download(config, item, onProgress),
 		transcript: (item) => ytdlp.fetchTranscript(config, item),
+		readDoc: (url) => readDoc(url),
 		listFiles: () => readdirSync(config.mediaDir),
 		removeFile: (name) => {
 			try {

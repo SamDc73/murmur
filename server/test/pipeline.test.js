@@ -105,7 +105,7 @@ describe("pipeline", () => {
 		pipeline.stop()
 	})
 
-	test("a playlist expands: first entry replaces the row, rest append after the queue", async () => {
+	test("a playlist opens up where it was pasted: first entry takes its row, the rest follow it", async () => {
 		const store = createMergeableStore("t")
 		let calls = 0
 		const tools = fakeTools({
@@ -137,12 +137,64 @@ describe("pipeline", () => {
 			"list",
 			newItem({ url: "https://www.youtube.com/playlist?list=PLxxxxxxxxxxxx", videoId: "", order: "a1", addedAt: 2 })
 		)
-		await until(() => Object.values(store.getTable(TABLES.items)).filter((r) => r.resolvedAt > 0).length === 4, 4000)
+		store.setRow(TABLES.items, "after", {
+			...newItem({ url: "y", videoId: "YYYYYYYYYYY", order: "a2", addedAt: 3 }),
+			resolvedAt: 5,
+		})
+		await until(() => Object.values(store.getTable(TABLES.items)).filter((r) => r.resolvedAt > 0).length === 5, 4000)
 		const rows = Object.entries(store.getTable(TABLES.items)).sort(([, a], [, b]) => (a.order < b.order ? -1 : 1))
-		expect(rows.map(([, r]) => r.videoId)).toEqual(["XXXXXXXXXXX", "AAAAAAAAAAA", "BBBBBBBBBBB", "CCCCCCCCCCC"])
+		expect(rows.map(([, r]) => r.videoId)).toEqual([
+			"XXXXXXXXXXX",
+			"AAAAAAAAAAA",
+			"BBBBBBBBBBB",
+			"CCCCCCCCCCC",
+			"YYYYYYYYYYY",
+		])
 		expect(rows[1][0]).toBe("list")
 		expect(rows[1][1].title).toBe("full AAAAAAAAAAA")
 		expect(calls).toBe(4)
+		pipeline.stop()
+	})
+
+	test("a Google Doc imports its links in place, skipping what's already queued", async () => {
+		const store = createMergeableStore("t")
+		const tools = fakeTools({
+			readDoc: async () => [
+				{ url: "https://www.youtube.com/watch?v=AAAAAAAAAAA", videoId: "AAAAAAAAAAA", playlistId: "", start: 0 },
+				{ url: "https://www.youtube.com/watch?v=XXXXXXXXXXX", videoId: "XXXXXXXXXXX", playlistId: "", start: 0 },
+				{ url: "https://www.youtube.com/watch?v=BBBBBBBBBBB", videoId: "BBBBBBBBBBB", playlistId: "", start: 42 },
+			],
+			probe: async (url) => ({ id: new URL(url).searchParams.get("v"), title: "full", duration: 10 }),
+		})
+		const pipeline = createPipeline({ store, config: { ...config, downloadConcurrency: 0 }, tools, log: quiet })
+		pipeline.start()
+		store.setRow(TABLES.items, "queued", {
+			...newItem({ url: "x", videoId: "XXXXXXXXXXX", order: "a0", addedAt: 1 }),
+			resolvedAt: 5,
+		})
+		const doc = "https://docs.google.com/document/d/1AbCdEfGhIjKlMnOpQrStUvWxYz0123456789"
+		store.setRow(TABLES.items, "doc", newItem({ url: doc, videoId: "", order: "a1", addedAt: 2 }))
+		store.setRow(TABLES.items, "after", {
+			...newItem({ url: "y", videoId: "YYYYYYYYYYY", order: "a2", addedAt: 3 }),
+			resolvedAt: 5,
+		})
+		await until(() => Object.values(store.getTable(TABLES.items)).filter((r) => r.resolvedAt > 0).length === 4, 4000)
+		const rows = Object.entries(store.getTable(TABLES.items)).sort(([, a], [, b]) => (a.order < b.order ? -1 : 1))
+		expect(rows.map(([, r]) => r.videoId)).toEqual(["XXXXXXXXXXX", "AAAAAAAAAAA", "BBBBBBBBBBB", "YYYYYYYYYYY"])
+		expect(rows[1][0]).toBe("doc")
+		expect(rows[2][1].position).toBe(42)
+		pipeline.stop()
+	})
+
+	test("a doc with nothing new says so on its row", async () => {
+		const store = createMergeableStore("t")
+		const tools = fakeTools({ readDoc: async () => [] })
+		const pipeline = createPipeline({ store, config, tools, log: quiet })
+		pipeline.start()
+		const doc = "https://docs.google.com/document/d/1AbCdEfGhIjKlMnOpQrStUvWxYz0123456789"
+		store.setRow(TABLES.items, "doc", newItem({ url: doc, videoId: "", order: "a0", addedAt: 1 }))
+		await until(() => store.getCell(TABLES.items, "doc", "error") !== "")
+		expect(store.getCell(TABLES.items, "doc", "error")).toBe("No YouTube links in that doc")
 		pipeline.stop()
 	})
 

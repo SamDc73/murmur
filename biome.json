@@ -198,7 +198,7 @@
 			"trailingCommas": "es5",
 			"arrowParentheses": "always"
 		},
-		"globals": ["Bun"]
+		"globals": ["Bun", "HTMLRewriter"]
 	},
 	"css": {
 		"parser": {

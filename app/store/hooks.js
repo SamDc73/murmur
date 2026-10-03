@@ -1,20 +1,10 @@
 import {
-	COPY_STATE,
-	classifyLinks,
 	copiesByItem,
 	copyId,
 	DEVICE_SERVER,
-	extractYouTubeLinks,
 	historyOf,
-	keyAfter,
-	keyForMove,
-	keysAfter,
-	keyToFollow,
-	lastKey,
 	newCopy,
-	newItem,
-	nextUp,
-	previousOf,
+	queueActions,
 	queueOf,
 	setting,
 	TABLES,
@@ -96,128 +86,19 @@ export function useActions() {
 }
 
 function actionsFor(store, local) {
-	const items = () => store.getTable(TABLES.items)
-	const queue = () => queueOf(items())
-	const currentId = () => setting(store.getValues(), VALUES.currentItemId)
+	// The queue's own changes are shared with the server's API (@murmur/core);
+	// what's added here is this device's: playing, its files, its pairing.
+	const queue = queueActions(store, { newId })
 	const deviceId = () => local.getValue(LOCAL_KEYS.deviceId)
-
-	// If the current episode is leaving the queue, the pointer moves to the one
-	// below it first (or to nothing, at the end).
-	function pointPastCurrent(id) {
-		if (currentId() === id) store.setValue(VALUES.currentItemId, nextUp(queue(), id))
-	}
-
-	/**
-	 * Look before adding: every YouTube link in `text`, sorted into
-	 * fresh / queued / played against what is already here. Writes nothing.
-	 */
-	function planAdd(text) {
-		const links = extractYouTubeLinks(text)
-		return { links, ...classifyLinks(links, items()) }
-	}
-
-	/**
-	 * Add what `planAdd` found. Fresh links join the end of the queue;
-	 * `requeuePlayed` brings played ones back after them; `queuedNext`
-	 * moves already-queued ones up to play next.
-	 */
-	function addPlanned(plan, { requeuePlayed = false, queuedNext = false } = {}) {
-		const current = queue()
-		const now = Date.now()
-		const fresh = plan.fresh
-		const again = requeuePlayed ? plan.played : []
-		const keys = keysAfter(lastKey(current), fresh.length + again.length)
-		store.transaction(() => {
-			fresh.forEach((link, index) => {
-				const row = newItem({ url: link.url, videoId: link.videoId, order: keys[index], addedAt: now + index })
-				store.setRow(TABLES.items, newId(), { ...row, position: link.start })
-			})
-			again.forEach(({ id }, index) => {
-				store.setPartialRow(TABLES.items, id, { doneAt: 0, position: 0, order: keys[fresh.length + index] })
-			})
-			if (queuedNext) {
-				let after = currentId()
-				for (const { id } of plan.queued) {
-					if (id !== currentId()) store.setCell(TABLES.items, id, "order", keyToFollow(queue(), after, id))
-					after = id
-				}
-			}
-		})
-		return { added: fresh.length, requeued: again.length, moved: queuedNext ? plan.queued.length : 0 }
-	}
-
-	/** Share to Murmur: add it all; something played before comes back. */
-	function addLinks(text) {
-		const plan = planAdd(text)
-		return plan.links.length === 0 ? null : addPlanned(plan, { requeuePlayed: true })
-	}
-
-	function remove(id) {
-		store.transaction(() => {
-			pointPastCurrent(id)
-			store.delRow(TABLES.items, id)
-			for (const cid of store.getRowIds(TABLES.copies)) {
-				if (store.getCell(TABLES.copies, cid, "itemId") === id) store.delRow(TABLES.copies, cid)
-			}
-		})
-	}
-
-	/** Right below whatever is playing now (the top, if nothing is). */
-	function playNext(id) {
-		const current = queue()
-		const playing = currentId()
-		if (id === playing || nextUp(current, playing) === id) return
-		store.setCell(TABLES.items, id, "order", keyToFollow(current, playing, id))
-	}
-
-	/** A drag ended: the row at `fromIndex` now sits at `toIndex`. */
-	function move(fromIndex, toIndex) {
-		const current = queue()
-		const key = keyForMove(current, fromIndex, toIndex)
-		if (key !== null) store.setCell(TABLES.items, current[fromIndex][0], "order", key)
-	}
 
 	function playNow(id) {
 		requestPlay(id)
 	}
 
-	function markDone(id) {
-		store.transaction(() => {
-			store.setCell(TABLES.items, id, "doneAt", Date.now())
-			pointPastCurrent(id)
-		})
-	}
-
-	/**
-	 * From History, straight into the player — just above what was playing,
-	 * so that one picks up again after it.
-	 */
+	/** From History, straight into the player — just above what was playing. */
 	function playAgain(id) {
-		const current = queue()
-		const above = previousOf(current, currentId())
-		store.setPartialRow(TABLES.items, id, { doneAt: 0, position: 0, order: keyToFollow(current, above, id) })
+		queue.requeue(id, { where: "now" })
 		requestPlay(id)
-	}
-
-	/** Back from History: to the end of the queue, or `next` — right below what is playing. */
-	function requeue(id, { next = false } = {}) {
-		const current = queue()
-		const order = next ? keyToFollow(current, currentId(), id) : keyAfter(lastKey(current))
-		store.setPartialRow(TABLES.items, id, { doneAt: 0, position: 0, order })
-	}
-
-	/** Clear a failure so the server tries the link again. */
-	function retry(id) {
-		store.transaction(() => {
-			store.setPartialRow(TABLES.items, id, { error: "", resolvedAt: 0 })
-			const cid = copyId(id, DEVICE_SERVER)
-			if (store.getCell(TABLES.copies, cid, "state") === COPY_STATE.error) store.delRow(TABLES.copies, cid)
-		})
-	}
-
-	/** Ask the server for this item as video (or back to audio). */
-	function wantKind(id, kind) {
-		store.setCell(TABLES.items, id, "wantKind", kind)
 	}
 
 	/** Fetch this item onto this phone now, whatever the auto-download rules say. */
@@ -260,18 +141,9 @@ function actionsFor(store, local) {
 	}
 
 	return {
-		planAdd,
-		addPlanned,
-		addLinks,
-		remove,
-		playNext,
-		move,
+		...queue,
 		playNow,
-		markDone,
 		playAgain,
-		requeue,
-		retry,
-		wantKind,
 		downloadHere,
 		removeHere,
 		pair,

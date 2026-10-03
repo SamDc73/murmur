@@ -5,6 +5,7 @@
 	"type": "module",
 	"exports": {
 		".": "./src/index.js",
+		"./actions": "./src/actions.js",
 		"./brand": "./src/brand.js",
 		"./schema": "./src/schema.js",
 		"./queue": "./src/queue.js",

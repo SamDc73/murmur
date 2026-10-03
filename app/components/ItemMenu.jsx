@@ -46,7 +46,7 @@ function ItemActions({ itemId, where, playsNext }) {
 			{where === "history" ? (
 				<>
 					<MenuItem icon={Play} label="Play now" onPress={() => actions.playAgain(itemId)} />
-					<MenuItem icon={ListStart} label="Play next" onPress={() => actions.requeue(itemId, { next: true })} />
+					<MenuItem icon={ListStart} label="Play next" onPress={() => actions.requeue(itemId, { where: "next" })} />
 				</>
 			) : null}
 			{where === "queue" && !playsNext ? (

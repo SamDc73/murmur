@@ -28,7 +28,7 @@ export function AddBar() {
 
 	function submit(value) {
 		const plan = planAdd(value)
-		if (plan.links.length === 0) return say("No YouTube link in that")
+		if (plan.links.length === 0) return say("No YouTube or Google Docs link in that")
 		if (plan.queued.length + plan.played.length === 0) return done(addPlanned(plan))
 		setPending(plan)
 	}
@@ -132,7 +132,8 @@ function question(plan, add) {
 	return { title: "Some of these are already here", body: parts.filter(Boolean).join(" · "), actions }
 }
 
-function summary({ added, requeued, moved }) {
+function summary(result) {
+	const [added, requeued, moved] = [result.added.length, result.requeued.length, result.moved.length]
 	const parts = []
 	if (added) parts.push(`Added ${added === 1 ? "one" : added}`)
 	if (requeued) parts.push(`${requeued} back from History`)
