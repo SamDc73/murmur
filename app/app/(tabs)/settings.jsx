@@ -104,7 +104,7 @@ function ServerGroup() {
 function status(syncState, error, token, info) {
 	if (syncState === "online") return info?.ytdlp ? `Connected · yt-dlp ${info.ytdlp}` : "Connected"
 	if (syncState === "connecting") return "Connecting…"
-	if (syncState === "locked") return token ? "Wrong token" : "Locked · enter MURMUR_TOKEN from the server’s .env"
+	if (syncState === "locked") return token ? "Wrong token" : "Locked · the token is in .env"
 	if (syncState === "offline") return `Offline${error ? ` · ${error}` : ""}`
 	return "No server — links wait for one"
 }

@@ -172,7 +172,7 @@ describe("connecting", () => {
 				}
 			)
 		}
-		await see(page.getByText("Locked · enter MURMUR_TOKEN from the server’s .env")).waitFor()
+		await see(page.getByText("Locked · the token is in .env")).waitFor()
 		expect(problems).toEqual([])
 	})
 
