@@ -117,6 +117,11 @@
 	--color-warning-line: #d9b57a;
 	--color-tertiary-wash: #eaf4f1;
 	--color-tertiary-line: #94cbbb;
+	/* The camera's screen is dark in either theme, like any viewfinder: the
+	   picture, the dimming around the square, and what's drawn over them. */
+	--color-camera: #000000;
+	--color-camera-veil: rgba(0, 0, 0, 0.55);
+	--color-on-camera: #ffffff;
 	/* Behind a dialog: the screen, dimmed. Translucent on purpose. */
 	--color-veil: rgba(13, 16, 18, 0.38);
 

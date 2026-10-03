@@ -1,16 +1,14 @@
 import { AUDIO_FORMATS, bytes, COPY_STATE, normaliseServerUrl, VALUES, VIDEO_HEIGHTS } from "@murmur/core"
 import Constants from "expo-constants"
-import { useRouter } from "expo-router"
 import ChevronDown from "lucide-react-native/icons/chevron-down"
 import ChevronUp from "lucide-react-native/icons/chevron-up"
-import ScanQrCode from "lucide-react-native/icons/scan-qr-code"
 import { useState } from "react"
 import { ScrollView, View } from "react-native"
 import { PairCode } from "../../components/PairCode"
+import { ScanButton } from "../../components/ScanButton"
 import { ScreenHeader } from "../../components/ScreenHeader"
 import { Button } from "../../components/ui/Button"
 import { Group, Row, RowField } from "../../components/ui/Group"
-import { IconButton } from "../../components/ui/IconButton"
 import { Select } from "../../components/ui/Select"
 import { Text } from "../../components/ui/Text"
 import { Toggle } from "../../components/ui/Toggle"
@@ -40,7 +38,6 @@ export default function SettingsScreen() {
 }
 
 function ServerGroup() {
-	const router = useRouter()
 	const serverUrl = useLocal(LOCAL_KEYS.serverUrl)
 	const token = useLocal(LOCAL_KEYS.token)
 	const syncState = useLocal(LOCAL_KEYS.syncState)
@@ -70,15 +67,7 @@ function ServerGroup() {
 			) : (
 				<Row label="Address">
 					<RowField value={url} onChangeText={setUrl} placeholder="https://murmur.example.com" inputMode="url" />
-					{CAN_DOWNLOAD ? (
-						<IconButton
-							as={ScanQrCode}
-							size="sm"
-							label="Scan a pairing code"
-							onPress={() => router.push("/pair")}
-							iconClassName="text-on-surface-variant"
-						/>
-					) : null}
+					<ScanButton />
 				</Row>
 			)}
 			<Row label="Token">
