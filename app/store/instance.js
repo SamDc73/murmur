@@ -43,12 +43,9 @@ function ensureDevice(local) {
 	if (!local.getValue(LOCAL_KEYS.deviceId)) {
 		local.setValue(LOCAL_KEYS.deviceId, newId())
 	}
-	if (!local.getValue(LOCAL_KEYS.deviceName)) {
-		local.setValue(LOCAL_KEYS.deviceName, defaultDeviceName())
-	}
 }
 
-function defaultDeviceName() {
+function deviceName() {
 	if (Platform.OS === "web") return "Browser"
 	return Device.modelName || Device.deviceName || "Phone"
 }
@@ -58,7 +55,7 @@ function touchDevice(store, local) {
 	const id = local.getValue(LOCAL_KEYS.deviceId)
 	if (!id || id === DEVICE_SERVER) return
 	store.setRow(TABLES.devices, id, {
-		name: String(local.getValue(LOCAL_KEYS.deviceName) || defaultDeviceName()),
+		name: deviceName(),
 		kind: Platform.OS === "web" ? "web" : "phone",
 		lastSeen: Date.now(),
 	})

@@ -126,12 +126,6 @@ function actionsFor(store, local) {
 		})
 	}
 
-	/** What other devices call this one. */
-	function renameDevice(name) {
-		local.setValue(LOCAL_KEYS.deviceName, name)
-		if (deviceId()) store.setCell(TABLES.devices, deviceId(), "name", name)
-	}
-
 	function setSetting(key, value) {
 		store.setValue(key, value)
 	}
@@ -148,7 +142,6 @@ function actionsFor(store, local) {
 		removeHere,
 		pair,
 		removeAllHere,
-		renameDevice,
 		setSetting,
 		setLocal,
 	}

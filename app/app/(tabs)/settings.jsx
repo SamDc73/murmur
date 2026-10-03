@@ -52,6 +52,8 @@ function ServerGroup() {
 	const [pairing, setPairing] = useState(false)
 	const info = useServerInfo(syncState === "online")
 	const sameOrigin = ORIGIN !== "" && serverUrl === ORIGIN
+	// The web app on its own server only asks for the token when it's turned away.
+	const askToken = !sameOrigin || syncState === "locked"
 	const changed = normaliseServerUrl(url) !== serverUrl || secret.trim() !== token
 
 	function save() {
@@ -70,20 +72,22 @@ function ServerGroup() {
 					<ScanButton />
 				</Row>
 			)}
-			<Row label="Token">
-				<RowField
-					value={secret}
-					onChangeText={setSecret}
-					placeholder="MURMUR_TOKEN"
-					secureTextEntry
-					onSubmitEditing={save}
-				/>
-				{changed ? (
-					<Button variant="tonal" size="sm" onPress={save}>
-						<Text>Save</Text>
-					</Button>
-				) : null}
-			</Row>
+			{askToken ? (
+				<Row label="Token">
+					<RowField
+						value={secret}
+						onChangeText={setSecret}
+						placeholder="MURMUR_TOKEN"
+						secureTextEntry
+						onSubmitEditing={save}
+					/>
+					{changed ? (
+						<Button variant="tonal" size="sm" onPress={save}>
+							<Text>Save</Text>
+						</Button>
+					) : null}
+				</Row>
+			) : null}
 			<Row label="Status" value={status(syncState, error, token, info.data)} />
 			{!CAN_DOWNLOAD && syncState === "online" ? (
 				<Row
@@ -100,7 +104,7 @@ function ServerGroup() {
 function status(syncState, error, token, info) {
 	if (syncState === "online") return info?.ytdlp ? `Connected · yt-dlp ${info.ytdlp}` : "Connected"
 	if (syncState === "connecting") return "Connecting…"
-	if (syncState === "locked") return token ? "Wrong token" : "Enter the server’s token to connect."
+	if (syncState === "locked") return token ? "Wrong token" : "Locked · enter MURMUR_TOKEN from the server’s .env"
 	if (syncState === "offline") return `Offline${error ? ` · ${error}` : ""}`
 	return "No server — links wait for one"
 }
@@ -113,9 +117,13 @@ function DownloadsGroup() {
 	const { setSetting } = useActions()
 	// Only phones keep files; browsers stream.
 	const phones = [...new Set(Object.values(devices).flatMap((d) => (d.kind === "phone" ? [d.name] : [])))]
+	const note =
+		phones.length > 0 && !keepOnServer
+			? `Once ${phones.join(" or ")} has an episode, the server deletes its copy.`
+			: null
 
 	return (
-		<Group title="Downloads" footer={downloadsNote(phones, keepOnServer)}>
+		<Group title="Downloads" footer={note}>
 			<Row label="Video">
 				<Select
 					label="Video"
@@ -143,13 +151,6 @@ function DownloadsGroup() {
 			) : null}
 		</Group>
 	)
-}
-
-// Where the files end up, said once under the group.
-function downloadsNote(phones, keepOnServer) {
-	const video = "Audio alone is about a tenth the size of video. Any episode can get its video from its menu."
-	if (phones.length === 0 || keepOnServer) return video
-	return `${video} Once ${phones.join(" or ")} has an episode, the server deletes its copy.`
 }
 
 function PhoneGroup() {
@@ -200,13 +201,8 @@ function PhoneGroup() {
 }
 
 function AboutGroup() {
-	const deviceName = useLocal(LOCAL_KEYS.deviceName)
-	const { renameDevice } = useActions()
 	return (
 		<Group title="About">
-			<Row label="This device">
-				<RowField value={deviceName} onChangeText={renameDevice} accessibilityLabel="This device’s name" />
-			</Row>
 			<Row label="Murmur" value={Constants.expoConfig?.version ?? "dev"} />
 		</Group>
 	)

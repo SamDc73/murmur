@@ -6,7 +6,6 @@ export const LOCAL = "local"
 
 export const LOCAL_KEYS = {
 	deviceId: "deviceId",
-	deviceName: "deviceName",
 	serverUrl: "serverUrl",
 	token: "token",
 	autoDownload: "autoDownload",
@@ -18,7 +17,6 @@ export const LOCAL_KEYS = {
 
 const LOCAL_DEFAULTS = {
 	deviceId: "",
-	deviceName: "",
 	serverUrl: "",
 	token: "",
 	autoDownload: true,

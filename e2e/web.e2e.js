@@ -172,7 +172,7 @@ describe("connecting", () => {
 				}
 			)
 		}
-		await see(page.getByText("Enter the server’s token to connect.")).waitFor()
+		await see(page.getByText("Locked · enter MURMUR_TOKEN from the server’s .env")).waitFor()
 		expect(problems).toEqual([])
 	})
 
@@ -183,6 +183,8 @@ describe("connecting", () => {
 		await page.locator("input[type=password]").fill(server.token)
 		await see(page.getByText("Save", { exact: true })).click()
 		await see(page.getByText(/^Connected/)).waitFor({ timeout: 15_000 })
+		// Served by its own server, the web app stops asking once it's in.
+		if (!process.env.APP_URL) expect(await page.locator("input[type=password]").count()).toBe(0)
 	})
 
 	test("Pair a phone shows a QR code carrying this server and the token", async () => {
