@@ -17,7 +17,7 @@ docker compose up -d
 Then open `http://<server address>`. The settings are in `docker-compose.yml`:
 
 - `DOMAIN`: `:80` is plain HTTP on a home network; a public name (`murmur.example.com`) gets HTTPS by itself.
-- `MURMUR_TOKEN`: a password. Leave it empty at home; set a long random one if the internet can reach the server. Then each browser asks for it once, and phones get it from the pairing code.
+- `MURMUR_PASSWORD`: empty means no sign-in, fine at home. Set one if the internet can reach the server: the web app then opens on a sign-in page, and phones get it from the pairing code.
 - `PUBLIC_URL`: where phones reach the server, for the pairing code in `docker compose logs server`.
 - `SERVER_NAME`, `YTDLP_ARGS`: what the apps call it; extra yt-dlp flags.
 
@@ -29,7 +29,7 @@ Install [the latest APK](https://github.com/SamDc73/murmur/releases/download/lat
 
 ## API
 
-With a token set, send it as `Authorization: Bearer <token>`:
+With a password set, send it as `Authorization: Bearer <password>`:
 
 ```
 GET    /api/queue        the queue, in order
@@ -39,7 +39,7 @@ PATCH  /api/queue/:id    {"index": 0} moves it · {"played": true} or false
 DELETE /api/queue/:id
 ```
 
-`curl -H "Authorization: Bearer $TOKEN" -d "https://youtu.be/jNQXAC9IVRw" http://<server>/api/queue`
+`curl -H "Authorization: Bearer $PASSWORD" -d "https://youtu.be/jNQXAC9IVRw" http://<server>/api/queue`
 
 ## Develop
 

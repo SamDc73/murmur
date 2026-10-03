@@ -11,7 +11,7 @@ export const LOCAL_KEYS = {
 	autoDownload: "autoDownload",
 	wifiOnly: "wifiOnly",
 	deleteAfterPlay: "deleteAfterPlay",
-	syncState: "syncState", // off | connecting | online | offline | locked (the server wants a token)
+	syncState: "syncState", // off | connecting | online | offline | locked (the server wants its password)
 	lastSyncError: "lastSyncError",
 }
 

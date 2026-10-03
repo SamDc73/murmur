@@ -13,7 +13,7 @@ function useServer() {
 }
 
 async function json(response) {
-	if (!response.ok) throw new Error(response.status === 401 ? "wrong token" : `HTTP ${response.status}`)
+	if (!response.ok) throw new Error(response.status === 401 ? "wrong password" : `HTTP ${response.status}`)
 	return response.json()
 }
 

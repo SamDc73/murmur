@@ -13,8 +13,9 @@ export const CONFIG = {
 	dataDir,
 	mediaDir: join(dataDir, "media"),
 	dbPath: join(dataDir, "murmur.sqlite"),
-	// One shared secret. Empty means "no auth" — only sane behind Tailscale or on a LAN.
-	token: process.env.MURMUR_TOKEN ?? "",
+	// The password (it travels as a bearer token). Empty: no sign-in, which is
+	// only sane at home or behind Tailscale.
+	token: process.env.MURMUR_PASSWORD ?? "",
 	// Where clients reach this server (https://murmur.example.com behind Caddy).
 	// Empty: the pairing code printed at startup uses this machine's name.
 	publicUrl: (process.env.PUBLIC_URL ?? "").replace(/\/+$/, ""),

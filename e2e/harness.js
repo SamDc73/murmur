@@ -67,7 +67,7 @@ export async function startServer({ port = 3790, token = "e2e-token", dataDir } 
 				PORT: String(port),
 				HOST: "127.0.0.1",
 				DATA_DIR: dir,
-				MURMUR_TOKEN: token,
+				MURMUR_PASSWORD: token,
 				PUBLIC_URL: url,
 			},
 			stdout: "pipe",

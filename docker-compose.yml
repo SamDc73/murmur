@@ -5,7 +5,7 @@ services:
   server:
     image: ghcr.io/samdc73/murmur-server:latest # pin a build: :sha-1a2b3c4
     environment:
-      MURMUR_TOKEN: "" # ← a password; leave empty at home (see README)
+      MURMUR_PASSWORD: "" # ← empty: no sign-in, fine at home (see README)
       PUBLIC_URL: "" # ← where phones reach this: http://<this box> or https://<DOMAIN>
       SERVER_NAME: Home # ← what the apps call this server
       YTDLP_ARGS: "" # ← extra yt-dlp flags, e.g. --proxy socks5://…

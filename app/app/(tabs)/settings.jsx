@@ -46,20 +46,17 @@ function ServerGroup() {
 	// What you're typing, until saved; otherwise what's stored — so a pairing
 	// that lands while this screen is open shows at once.
 	const [draftUrl, setUrl] = useState(null)
-	const [draftToken, setSecret] = useState(null)
+	const [draftPassword, setPassword] = useState(null)
 	const url = draftUrl ?? serverUrl
-	const secret = draftToken ?? token
+	const password = draftPassword ?? token
 	const [pairing, setPairing] = useState(false)
 	const info = useServerInfo(syncState === "online")
 	const sameOrigin = ORIGIN !== "" && serverUrl === ORIGIN
-	// The web app on its own server only asks for the token when it's turned away.
-	const askToken = !sameOrigin || syncState === "locked"
-	const changed = normaliseServerUrl(url) !== serverUrl || secret.trim() !== token
 
 	function save() {
-		pair({ serverUrl: normaliseServerUrl(url), token: secret.trim() })
+		pair({ serverUrl: normaliseServerUrl(url), token: password.trim() })
 		setUrl(null)
-		setSecret(null)
+		setPassword(null)
 	}
 
 	return (
@@ -68,24 +65,27 @@ function ServerGroup() {
 				<Row label="Address" value={serverUrl.replace(/^https?:\/\//, "")} />
 			) : (
 				<Row label="Address">
-					<RowField value={url} onChangeText={setUrl} placeholder="https://murmur.example.com" inputMode="url" />
-					<ScanButton />
+					<RowField
+						value={url}
+						onChangeText={setUrl}
+						placeholder="https://murmur.example.com"
+						inputMode="url"
+						onSubmitEditing={save}
+					/>
+					{normaliseServerUrl(url) !== serverUrl ? <SaveButton onPress={save} /> : <ScanButton />}
 				</Row>
 			)}
-			{askToken ? (
-				<Row label="Token">
+			{/* Asked for only when the server turns this device away. */}
+			{syncState === "locked" ? (
+				<Row label="Password">
 					<RowField
-						value={secret}
-						onChangeText={setSecret}
-						placeholder="MURMUR_TOKEN"
+						value={password}
+						onChangeText={setPassword}
+						placeholder="MURMUR_PASSWORD"
 						secureTextEntry
 						onSubmitEditing={save}
 					/>
-					{changed ? (
-						<Button variant="tonal" size="sm" onPress={save}>
-							<Text>Save</Text>
-						</Button>
-					) : null}
+					{password.trim() !== token ? <SaveButton onPress={save} /> : null}
 				</Row>
 			) : null}
 			<Row label="Status" value={status(syncState, error, token, info.data)} />
@@ -104,9 +104,17 @@ function ServerGroup() {
 function status(syncState, error, token, info) {
 	if (syncState === "online") return info?.ytdlp ? `Connected · yt-dlp ${info.ytdlp}` : "Connected"
 	if (syncState === "connecting") return "Connecting…"
-	if (syncState === "locked") return token ? "Wrong token" : "Locked · enter MURMUR_TOKEN"
+	if (syncState === "locked") return token ? "Wrong password" : "Needs the password"
 	if (syncState === "offline") return `Offline${error ? ` · ${error}` : ""}`
 	return "No server — links wait for one"
+}
+
+function SaveButton({ onPress }) {
+	return (
+		<Button variant="tonal" size="sm" onPress={onPress}>
+			<Text>Save</Text>
+		</Button>
+	)
 }
 
 function DownloadsGroup() {

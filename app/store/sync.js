@@ -42,8 +42,8 @@ const isAwake = () => Platform.OS === "web" || AppState.currentState !== "backgr
 /**
  * Stay synced until stopped: knock, open the socket, sync — and when it
  * drops, wait a little longer each time and go again. A wrong or missing
- * token is an answer, not an outage: it is reported once and not retried;
- * the effect starts over when the token changes. Returns the stop function.
+ * password is an answer, not an outage: it is reported once and not retried;
+ * the effect starts over when the password changes. Returns the stop function.
  */
 function keepConnected({ store, local, serverUrl, token }) {
 	let stopped = false
@@ -64,10 +64,11 @@ function keepConnected({ store, local, serverUrl, token }) {
 	}
 
 	async function connect() {
-		report("connecting")
+		// Locked stays locked while it asks again, so the sign-in screen holds still.
+		if (local.getValue(LOCAL_KEYS.syncState) !== "locked") report("connecting")
 		const answer = await knock(serverUrl, token)
 		if (stopped) return
-		if (answer === "unauthorised") return report("locked", token ? "wrong token" : "")
+		if (answer === "unauthorised") return report("locked", token ? "wrong password" : "")
 		if (answer === "unreachable") return dropped("server unreachable")
 
 		socket = new WebSocket(wsUrl(serverUrl, token))
@@ -101,9 +102,9 @@ function keepConnected({ store, local, serverUrl, token }) {
 
 /**
  * "ok", "unauthorised" or "unreachable". The public health check says whether
- * a token is wanted, so no token means no request that is bound to be refused.
+ * a password is wanted, so none means no request that is bound to be refused.
  */
-async function knock(serverUrl, token) {
+export async function knock(serverUrl, token) {
 	const base = normaliseServerUrl(serverUrl)
 	try {
 		const health = await (await fetch(`${base}/api/health`)).json()

@@ -21,8 +21,8 @@ export function ServerNotice({ hasItems }) {
 		title = "No server yet"
 		detail = "Links wait here until one is set in Settings."
 	} else if (state === "locked") {
-		title = error ? "The server turned down the token" : "The server wants its token"
-		detail = "It’s MURMUR_TOKEN in the server’s docker-compose.yml. Enter it in Settings."
+		title = error ? "The server turned down the password" : "The server wants its password"
+		detail = "It’s MURMUR_PASSWORD in the server’s docker-compose.yml. Enter it in Settings."
 	} else if (state === "offline") {
 		title = `Can’t reach ${serverUrl.replace(/^https?:\/\//, "")}`
 		detail = error === "server unreachable" ? "Is the server running? Check the address in Settings." : error

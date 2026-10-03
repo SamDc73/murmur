@@ -77,12 +77,15 @@ async function open() {
 	return tab
 }
 
-async function connect(tab, token = server.token) {
+async function connect(tab, password = server.token) {
 	await tab.goto(`${web.url}/settings`, { waitUntil: "networkidle" })
 	const address = tab.getByPlaceholder("https://murmur.example.com")
-	if ((await address.count()) > 0 && !(await address.inputValue())) await address.fill(server.url)
-	await tab.locator("input[type=password]").fill(token)
-	await see(tab.getByText("Save", { exact: true })).click()
+	if ((await address.count()) > 0 && !(await address.inputValue())) {
+		await address.fill(server.url)
+		await see(tab.getByText("Save", { exact: true })).click()
+	}
+	await see(tab.getByPlaceholder("Password")).fill(password)
+	await see(tab.getByText("Sign in", { exact: true })).click()
 }
 
 async function paste(text, tab = page) {
@@ -157,34 +160,25 @@ const current = () => setting(peer.store.getValues(), VALUES.currentItemId)
 // ---- the story ------------------------------------------------------------------
 
 describe("connecting", () => {
-	test("finds the server by itself and asks only for the token", async () => {
-		await page.goto(`${web.url}/`, { waitUntil: "networkidle" })
-		await see(page.getByText("The server wants its token")).waitFor()
+	test("finds the server by itself and opens on the sign-in page", async () => {
 		await page.goto(`${web.url}/settings`, { waitUntil: "networkidle" })
-		if (!process.env.APP_URL) {
-			expect(await page.getByPlaceholder("https://murmur.example.com").count()).toBe(0)
-		} else if (server.port === 3000) {
-			// Under Metro the server is found next door, on its default port.
-			await waitFor(
-				async () => (await page.getByPlaceholder("https://murmur.example.com").inputValue()).endsWith(":3000"),
-				{
-					label: "server address found next door",
-				}
-			)
-		}
-		await see(page.getByText("Locked · enter MURMUR_TOKEN")).waitFor()
+		// Any address leads here: the server was found, and it wants its password.
+		await see(page.getByPlaceholder("Password")).waitFor()
+		expect(await page.getByPlaceholder("https://murmur.example.com").count()).toBe(0)
+		expect(await page.getByText("Settings").count()).toBe(0)
 		expect(problems).toEqual([])
 	})
 
-	test("a wrong token says so; the right one connects", async () => {
-		await connect(page, "not-the-token")
-		await see(page.getByText("Wrong token")).waitFor({ timeout: 10_000 })
+	test("a wrong password says so; the right one signs in, and is remembered", async () => {
+		await connect(page, "not-the-password")
+		await see(page.getByText("Wrong password")).waitFor({ timeout: 10_000 })
 		problems.length = 0 // the refused request is the point of this test
-		await page.locator("input[type=password]").fill(server.token)
-		await see(page.getByText("Save", { exact: true })).click()
+		await page.getByPlaceholder("Password").fill(server.token)
+		await page.getByPlaceholder("Password").press("Enter")
+		await see(page.getByPlaceholder("Add a YouTube link")).waitFor({ timeout: 15_000 })
+		await page.goto(`${web.url}/settings`, { waitUntil: "networkidle" })
 		await see(page.getByText(/^Connected/)).waitFor({ timeout: 15_000 })
-		// Served by its own server, the web app stops asking once it's in.
-		if (!process.env.APP_URL) expect(await page.locator("input[type=password]").count()).toBe(0)
+		expect(await page.locator("input[type=password]").count()).toBe(0)
 	})
 
 	test("Pair a phone shows a QR code carrying this server and the token", async () => {

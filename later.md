@@ -35,7 +35,7 @@ Things deliberately left out of the first cut, roughly in the order they were as
 - **Export / import** the queue and history as JSON.
 
 ## Server
-- **Per-device tokens.** Today every client holds the one `MURMUR_TOKEN`; the pairing QR just carries it. The upgrade, when cutting off a single phone matters: the web issues a five-minute pairing code, the phone trades it for its own token, and the Devices list gets a Revoke. (Nextcloud app passwords, Home Assistant long-lived tokens, Memos PATs all work this way.)
+- **Per-device tokens.** Today every client holds the one `MURMUR_PASSWORD`; the pairing QR just carries it. The upgrade, when cutting off a single phone matters: the web issues a five-minute pairing code, the phone trades it for its own token, and the Devices list gets a Revoke. (Nextcloud app passwords, Home Assistant long-lived tokens, Memos PATs all work this way.)
 - **Cookies UI**: paste a Netscape cookies file in Settings and send it to the server, instead of copying it into the data volume by hand. YouTube's bot check on datacenter IPs is the single most likely thing to break downloads.
 - **Multi-user** (one token per person, one store each).
 - **Push** when a download finishes or a subscription finds something (ntfy is a natural fit and was in the old compose file).

@@ -2,7 +2,7 @@ import { timingSafeEqual } from "node:crypto"
 
 // One token, three places it may arrive: a Bearer header (fetch from the app),
 // a `token` query (an <audio> element or a WebSocket cannot set headers), or
-// nothing at all when MURMUR_TOKEN is unset.
+// nothing at all when MURMUR_PASSWORD is unset.
 
 export function tokenFrom(url, headers) {
 	const auth = headers.get?.("authorization") ?? headers.authorization ?? ""

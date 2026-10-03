@@ -5,13 +5,15 @@ import { Stack, useRouter } from "expo-router"
 import * as SplashScreen from "expo-splash-screen"
 import { StatusBar } from "expo-status-bar"
 import { useEffect } from "react"
+import { Platform } from "react-native"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { SafeAreaProvider } from "react-native-safe-area-context"
 import { registerDownloadTask } from "../downloads/task"
 import { useShareIntent } from "../lib/share-intent"
 import { Toaster } from "../lib/toast"
 import { useTokenColour } from "../lib/use-token-colour"
-import { useActions } from "../store/hooks"
+import { useActions, useLocal } from "../store/hooks"
+import { LOCAL_KEYS } from "../store/local"
 import { StoreProvider } from "../store/StoreProvider"
 import { useSync } from "../store/sync"
 import { FONTS } from "../theme/fonts"
@@ -67,13 +69,22 @@ function Boot() {
 
 function Shell() {
 	const background = useTokenColour("--color-background")
+	// Turned away by a server with a password, the web app has nothing to show
+	// but the sign-in screen. A phone still plays what it holds, and asks for
+	// the password in Settings.
+	const signedOut = useLocal(LOCAL_KEYS.syncState) === "locked" && Platform.OS === "web"
 	return (
 		<>
 			<StatusBar style="auto" />
 			<Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: background } }}>
-				<Stack.Screen name="(tabs)" />
-				<Stack.Screen name="now" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
-				<Stack.Screen name="pair" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
+				<Stack.Protected guard={!signedOut}>
+					<Stack.Screen name="(tabs)" />
+					<Stack.Screen name="now" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
+					<Stack.Screen name="pair" options={{ presentation: "modal", animation: "slide_from_bottom" }} />
+				</Stack.Protected>
+				<Stack.Protected guard={signedOut}>
+					<Stack.Screen name="sign-in" />
+				</Stack.Protected>
 			</Stack>
 		</>
 	)

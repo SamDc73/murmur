@@ -127,7 +127,7 @@ await connectSelf()
 pipeline = createPipeline({ store, config: CONFIG, tools: realTools(CONFIG, ytdlp) })
 pipeline.start()
 
-if (CONFIG.token === "") console.warn("[murmur] MURMUR_TOKEN is empty: anyone who can reach this port can use it")
+if (CONFIG.token === "") console.warn("[murmur] MURMUR_PASSWORD is empty: anyone who can reach this port can use it")
 
 // How a phone joins: scan this from the log (`docker compose logs server`),
 // or from the web app's Settings once a browser is connected.
