@@ -2,7 +2,7 @@ import { mkdirSync } from "node:fs"
 import { join, resolve } from "node:path"
 
 // Everything the server takes from the environment, read once. Defaults suit
-// `bun run dev` from this directory; docker-compose sets DATA_DIR and TOKEN.
+// `bun run dev` from this directory; docker-compose.yml sets the rest.
 
 const dataDir = resolve(process.env.DATA_DIR ?? "./data")
 mkdirSync(join(dataDir, "media"), { recursive: true })

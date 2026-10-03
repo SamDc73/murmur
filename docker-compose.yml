@@ -1,38 +1,34 @@
-# `docker compose up -d` and nothing else: it pulls the images CI publishes for
-# every push to main (amd64 and arm64). DOMAIN and MURMUR_TOKEN come from
-# `.env` in this directory (see README → Self-host). To build them yourself
-# instead: `docker build --target server -t ghcr.io/samdc73/murmur-server .`
-# (and `--target web` for murmur-web).
+# Murmur. `docker compose up -d` pulls the images built from every push to main
+# (amd64, arm64). The settings are the lines marked ←; edit them, run it again.
 
 services:
   server:
-    image: ghcr.io/samdc73/murmur-server:${MURMUR_TAG:-latest}
+    image: ghcr.io/samdc73/murmur-server:latest # pin a build: :sha-1a2b3c4
     environment:
-      DATA_DIR: /data
-      MURMUR_TOKEN: ${MURMUR_TOKEN:?set MURMUR_TOKEN in .env}
-      SERVER_NAME: ${SERVER_NAME:-Server}
-      PUBLIC_URL: ${PUBLIC_URL:-https://${DOMAIN}}
-      YTDLP_ARGS: ${YTDLP_ARGS:-}
+      MURMUR_TOKEN: "" # ← a password; leave empty at home (see README)
+      PUBLIC_URL: "" # ← where phones reach this: http://<this box> or https://<DOMAIN>
+      SERVER_NAME: Home # ← what the apps call this server
+      YTDLP_ARGS: "" # ← extra yt-dlp flags, e.g. --proxy socks5://…
     volumes:
-      - data:/data
+      - data:/data # the database and the media; back this up
     restart: unless-stopped
 
   caddy:
-    image: ghcr.io/samdc73/murmur-web:${MURMUR_TAG:-latest}
+    image: ghcr.io/samdc73/murmur-web:latest
+    environment:
+      DOMAIN: ":80" # ← ":80" is plain HTTP at home; a public name gets HTTPS by itself
     ports:
       - "80:80"
       - "443:443"
       - "443:443/udp"
-    environment:
-      DOMAIN: ${DOMAIN:?set DOMAIN in .env}
     volumes:
-      - caddy_data:/data
+      - caddy_data:/data # certificates
       - caddy_config:/config
     depends_on:
       - server
     restart: unless-stopped
 
 volumes:
-  data:          # murmur.sqlite + media/ — back this up
-  caddy_data:    # certificates
+  data:
+  caddy_data:
   caddy_config:

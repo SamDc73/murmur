@@ -11,11 +11,17 @@ Paste YouTube links — one, a whole list, or a Google Doc full of them — and 
 
 ```sh
 curl -O https://raw.githubusercontent.com/SamDc73/murmur/main/docker-compose.yml
-curl -o .env https://raw.githubusercontent.com/SamDc73/murmur/main/.env.example   # set DOMAIN and MURMUR_TOKEN
 docker compose up -d
 ```
 
-On a home network without a domain: `DOMAIN=:80` and `PUBLIC_URL=http://<server address>`. If YouTube asks you to sign in, put a `cookies.txt` in the `data` volume.
+Then open `http://<server address>`. The settings are in `docker-compose.yml`:
+
+- `DOMAIN`: `:80` is plain HTTP on a home network; a public name (`murmur.example.com`) gets HTTPS by itself.
+- `MURMUR_TOKEN`: a password. Leave it empty at home; set a long random one if the internet can reach the server. Then each browser asks for it once, and phones get it from the pairing code.
+- `PUBLIC_URL`: where phones reach the server, for the pairing code in `docker compose logs server`.
+- `SERVER_NAME`, `YTDLP_ARGS`: what the apps call it; extra yt-dlp flags.
+
+If YouTube asks you to sign in, put a `cookies.txt` in the `data` volume.
 
 ## Phone
 
@@ -23,7 +29,7 @@ Install [the latest APK](https://github.com/SamDc73/murmur/releases/download/lat
 
 ## API
 
-Same token, as `Authorization: Bearer <token>`:
+With a token set, send it as `Authorization: Bearer <token>`:
 
 ```
 GET    /api/queue        the queue, in order
@@ -39,7 +45,6 @@ DELETE /api/queue/:id
 
 ```sh
 bun install
-cp server/.env.example server/.env
 bun run dev        # server on :3000, web app on :8081
 bun run lint       # Biome, ESLint, knip
 bun run test       # unit tests
