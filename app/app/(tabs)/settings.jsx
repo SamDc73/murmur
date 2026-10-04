@@ -16,7 +16,6 @@ import { CAN_DOWNLOAD } from "../../downloads/phone"
 import { useActions, useCopiesByItem, useDeviceId, useDevices, useLocal, useSetting } from "../../store/hooks"
 import { LOCAL_KEYS } from "../../store/local"
 import { ORIGIN } from "../../store/origin"
-import { useServerInfo } from "../../store/server"
 
 const VIDEO = VIDEO_HEIGHTS.map((value) => ({ value, label: value === 0 ? "Off" : `${value}p` }))
 const AUDIO = AUDIO_FORMATS.map((value) => ({ value, label: value }))
@@ -50,7 +49,6 @@ function ServerGroup() {
 	const url = draftUrl ?? serverUrl
 	const password = draftPassword ?? token
 	const [pairing, setPairing] = useState(false)
-	const info = useServerInfo(syncState === "online")
 	const sameOrigin = ORIGIN !== "" && serverUrl === ORIGIN
 
 	function save() {
@@ -88,7 +86,8 @@ function ServerGroup() {
 					{password.trim() !== token ? <SaveButton onPress={save} /> : null}
 				</Row>
 			) : null}
-			<Row label="Status" value={status(syncState, error, token, info.data)} />
+			{/* Connected says nothing; anything else says what's wrong, by the field that fixes it. */}
+			{syncState === "online" ? null : <Row label="Status" value={status(syncState, error, token)} />}
 			{!CAN_DOWNLOAD && syncState === "online" ? (
 				<Row
 					label="Pair a phone"
@@ -101,8 +100,7 @@ function ServerGroup() {
 	)
 }
 
-function status(syncState, error, token, info) {
-	if (syncState === "online") return info?.ytdlp ? `Connected · yt-dlp ${info.ytdlp}` : "Connected"
+function status(syncState, error, token) {
 	if (syncState === "connecting") return "Connecting…"
 	if (syncState === "locked") return token ? "Wrong password" : "Needs the password"
 	if (syncState === "offline") return `Offline${error ? ` · ${error}` : ""}`

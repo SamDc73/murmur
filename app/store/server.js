@@ -3,7 +3,7 @@ import { useLocal } from "./hooks"
 import { LOCAL_KEYS } from "./local"
 
 // What the app asks the server over HTTP (everything else is the synced
-// store). Both are cached by TanStack Query: fetched when first shown.
+// store): a transcript, cached by TanStack Query once fetched.
 
 function useServer() {
 	const serverUrl = useLocal(LOCAL_KEYS.serverUrl)
@@ -15,17 +15,6 @@ function useServer() {
 async function json(response) {
 	if (!response.ok) throw new Error(response.status === 401 ? "wrong password" : `HTTP ${response.status}`)
 	return response.json()
-}
-
-/** yt-dlp's version and the item count, once connected. */
-export function useServerInfo(enabled) {
-	const server = useServer()
-	return useQuery({
-		queryKey: ["server-info", server.serverUrl, server.token],
-		enabled: Boolean(enabled && server.serverUrl),
-		staleTime: 30_000,
-		queryFn: () => server.get("/api/info").then(json),
-	})
 }
 
 /** An episode's transcript: [{ s, e, t }], or undefined while it loads. */

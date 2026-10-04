@@ -177,7 +177,9 @@ describe("connecting", () => {
 		await page.getByPlaceholder("Password").press("Enter")
 		await see(page.getByPlaceholder("Add a YouTube link")).waitFor({ timeout: 15_000 })
 		await page.goto(`${web.url}/settings`, { waitUntil: "networkidle" })
-		await see(page.getByText(/^Connected/)).waitFor({ timeout: 15_000 })
+		// Connected: Pair a phone appears, and there's no status to read.
+		await see(page.getByText("Pair a phone")).waitFor({ timeout: 15_000 })
+		expect(await page.getByText("Status", { exact: true }).count()).toBe(0)
 		expect(await page.locator("input[type=password]").count()).toBe(0)
 	})
 
@@ -420,7 +422,7 @@ describe("two browsers", () => {
 	test("share one queue: what one adds, the other shows", async () => {
 		const other = await open()
 		await connect(other)
-		await see(other.getByText(/^Connected/)).waitFor({ timeout: 15_000 })
+		await see(other.getByPlaceholder("Add a YouTube link")).waitFor({ timeout: 15_000 })
 		await other.goto(`${web.url}/`, { waitUntil: "networkidle" })
 		await see(other.getByText(ZOO.title)).waitFor({ timeout: 30_000 })
 		await paste(SNOWBOARD.url)
