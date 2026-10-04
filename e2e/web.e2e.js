@@ -323,6 +323,22 @@ describe("listening", () => {
 		expect(await page.getByLabel("Note").inputValue()).toBe(NOTE)
 	})
 
+	test("Watch streams at once, through the server, with nothing downloaded", async () => {
+		const zoo = idOf(ZOO)
+		await see(page.getByLabel("Play")).click()
+		await waitFor(async () => (await clock()) > 1, { label: "audio playing" })
+		await see(page.getByRole("switch")).click()
+		await waitFor(async () => (await watching())?.paused === false && (await watching()).time > 2, {
+			timeout: 30_000,
+			label: "the stream plays",
+		})
+		expect(peer.store.getCell(TABLES.copies, copyId(zoo, DEVICE_SERVER), "kind")).toBe("audio")
+		await see(page.getByRole("switch")).click()
+		const back = await clock()
+		await waitFor(async () => (await clock()) > back + 0.5, { timeout: 10_000, label: "audio carries on" })
+		await see(page.getByLabel("Pause")).click()
+	})
+
 	test("Watch picks up where the audio was; Listen carries on from the picture", async () => {
 		await see(page.getByLabel("More")).click()
 		await see(page.getByRole("menuitem", { name: "Get the video" })).click()

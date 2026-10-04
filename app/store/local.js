@@ -38,6 +38,13 @@ export function wsUrl(serverUrl, token) {
 	return url.toString()
 }
 
+/** An episode's video, streamed through the server as it plays (server/src/stream.js). */
+export function streamUrl(serverUrl, token, itemId) {
+	const url = new URL(`${normaliseServerUrl(serverUrl)}/api/stream/${encodeURIComponent(itemId)}/index.m3u8`)
+	if (token) url.searchParams.set("token", token)
+	return url.toString()
+}
+
 /** A file the server keeps in DATA_DIR/media: "<itemId>.m4a", "<itemId>.transcript.json". */
 export function mediaUrl(serverUrl, token, fileName, version) {
 	const url = new URL(`${normaliseServerUrl(serverUrl)}/api/media/${encodeURIComponent(fileName)}`)

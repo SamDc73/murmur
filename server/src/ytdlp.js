@@ -103,6 +103,12 @@ export async function probe(config, url, { playlist = false } = {}) {
 	return JSON.parse(stdout)
 }
 
+/** The address of YouTube's HLS master playlist for a video, or "" if it has none. */
+export async function hlsManifest(config, url) {
+	const info = await probe(config, url)
+	return info.formats?.find((format) => String(format.protocol).startsWith("m3u8"))?.manifest_url ?? ""
+}
+
 /**
  * Download one item. Resolves with the final file path. `onProgress` gets
  * {downloaded, total} at most as often as yt-dlp prints.

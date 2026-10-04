@@ -24,7 +24,7 @@ import { seekTo } from "../player/controller"
 import { usePlaying } from "../player/picture"
 import { sourceFor } from "../player/source"
 import { useActions, useCopies, useCurrentId, useDeviceId, useItem, useLocal, useSetting } from "../store/hooks"
-import { LOCAL_KEYS } from "../store/local"
+import { LOCAL_KEYS, streamUrl } from "../store/local"
 
 const RATES = [0.8, 1, 1.25, 1.5, 1.75, 2].map((value) => ({ value, label: `${value}×` }))
 // Two columns from a small laptop up: the player, and what to read beside it.
@@ -109,17 +109,23 @@ function Player({ item, itemId, artWidth, showArt, className }) {
 	const { setSetting } = useActions()
 	const { playing } = usePlaying()
 	const [watching, setWatching] = useState(false)
+	const online = useLocal(LOCAL_KEYS.syncState) === "online"
 	const source = sourceFor({ copies, deviceId, serverUrl, token })
 	const server = copies[DEVICE_SERVER]
 	const meta = [item.channel, uploadDate(item.uploadDate)].filter(Boolean).join(" · ")
-	const picture = watching && source?.kind === MEDIA_KIND.video
+	// The video: its file if one was fetched (it works offline), else streamed
+	// through the server — no waiting for a download.
+	let video = null
+	if (source?.kind === MEDIA_KIND.video) video = { url: source.url, stream: false }
+	else if (online && item.videoId) video = { url: streamUrl(serverUrl, token, itemId), stream: true }
+	const picture = watching && video !== null
 
 	return (
 		<View className={cn("gap-md", className)}>
 			<View className="items-center">
 				{picture ? (
 					<View style={{ width: artWidth }}>
-						<VideoPane itemId={itemId} url={source.url} />
+						<VideoPane itemId={itemId} url={video.url} stream={video.stream} />
 					</View>
 				) : null}
 				{!picture && showArt ? (
@@ -140,7 +146,7 @@ function Player({ item, itemId, artWidth, showArt, className }) {
 					options={RATES}
 					onChange={(value) => setSetting(VALUES.playbackRate, value)}
 				/>
-				{source?.kind === MEDIA_KIND.video ? (
+				{video ? (
 					<Pressable
 						role="switch"
 						accessibilityState={{ checked: watching }}

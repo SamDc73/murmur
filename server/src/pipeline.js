@@ -458,6 +458,8 @@ export function realTools(config, ytdlp) {
 		probe: (url, options) => ytdlp.probe(config, url, options),
 		download: (item, onProgress) => ytdlp.download(config, item, onProgress),
 		transcript: (item) => ytdlp.fetchTranscript(config, item),
+		// For the stream relay (stream.js), not the pipeline.
+		hlsManifest: (url) => ytdlp.hlsManifest(config, url),
 		readDoc: (url) => readDoc(url),
 		listFiles: () => readdirSync(config.mediaDir),
 		freeBytes: () => {
