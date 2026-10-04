@@ -18,9 +18,13 @@ export function probeArgs(config, url, { playlist }) {
 }
 
 /**
- * Arguments for `download`. Audio keeps the source codec whenever YouTube has
- * the requested container (AAC in m4a, Opus in webm), so ffmpeg only remuxes;
- * video merges the best stream up to the chosen height into an mp4.
+ * Arguments for `download`, choosing by yt-dlp's format sorting (-S), as its
+ * docs advise over hand-written filters. Audio: the best audio-only stream,
+ * AAC (or Opus) first, in the episode's own language; -x converts only if it
+ * isn't already that ("Not converting audio … already in target format").
+ * Video: the best up to the chosen height — or the highest there is, below
+ * it — and H.264 at that height, which every phone and browser decodes in
+ * hardware (left alone, yt-dlp prefers AV1 or VP9), merged into an mp4.
  */
 export function downloadArgs(config, { url, itemId, kind, audioFormat, videoHeight }) {
 	const template = join(config.mediaDir, `${itemId}.%(ext)s`)
@@ -39,12 +43,11 @@ export function downloadArgs(config, { url, itemId, kind, audioFormat, videoHeig
 	]
 	if (kind === "video") {
 		const h = Number(videoHeight) || 720
-		args.push("-f", `bv*[height<=${h}][ext=mp4]+ba[ext=m4a]/b[height<=${h}][ext=mp4]/bv*[height<=${h}]+ba/b`)
-		args.push("--merge-output-format", "mp4")
+		args.push("-f", "bv*+ba/b", "-S", `res:${h},vcodec:h264,acodec:aac`, "--merge-output-format", "mp4")
 	} else if (audioFormat === "opus") {
-		args.push("-f", "bestaudio[ext=webm]/bestaudio[acodec=opus]/bestaudio", "-x", "--audio-format", "opus")
+		args.push("-f", "ba", "-S", "acodec:opus", "-x", "--audio-format", "opus")
 	} else {
-		args.push("-f", "bestaudio[ext=m4a]/bestaudio[acodec^=mp4a]/bestaudio", "-x", "--audio-format", "m4a")
+		args.push("-f", "ba", "-S", "acodec:aac", "-x", "--audio-format", "m4a")
 	}
 	args.push(url)
 	return args
