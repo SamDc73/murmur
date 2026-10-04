@@ -1,4 +1,14 @@
-import { copiesByItem, introEnd, nextUp, parseChapters, previousOf, queueOf, setting, TABLES, VALUES } from "@murmur/core"
+import {
+	copiesByItem,
+	introEnd,
+	nextUp,
+	parseChapters,
+	previousOf,
+	queueOf,
+	setting,
+	TABLES,
+	VALUES,
+} from "@murmur/core"
 import TrackPlayer, { AppKilledPlaybackBehavior, Capability, Event, RepeatMode, State } from "react-native-track-player"
 import { LOCAL_KEYS } from "../store/local"
 import { picture } from "./picture"
@@ -23,7 +33,7 @@ let ctx = null
 
 export async function attachPlayer({ store, local }) {
 	if (ctx !== null) return
-	ctx = { store, local, loaded: null, wantPlay: false, lastSaved: -1, syncing: Promise.resolve() }
+	ctx = { store, local, loaded: null, playing: false, wantPlay: false, lastSaved: -1, syncing: Promise.resolve() }
 	try {
 		await TrackPlayer.setupPlayer({
 			// media3 owns audio focus — calls, navigation prompts, other apps —
@@ -206,6 +216,7 @@ async function keepPosition(id) {
 }
 
 async function onState({ state }) {
+	ctx.playing = state === State.Playing || state === State.Buffering || state === State.Loading
 	if (state === State.Ended) return finished()
 	const id = ctx.loaded?.id
 	if (!id || (state !== State.Paused && state !== State.Stopped)) return
@@ -236,6 +247,15 @@ export function finished() {
 /** Make `id` the current episode and play it. */
 export function requestPlay(id) {
 	if (!ctx) return
+	// Already loaded: start it right here, inside the press. Browsers that
+	// block autoplay (Firefox's strict setting — IronFox, LibreWolf — and
+	// Safari) let audio start only from a click, and every step through the
+	// store would come too late.
+	if (ctx.loaded?.id === id) {
+		ctx.wantPlay = false
+		TrackPlayer.play()
+		return
+	}
 	ctx.wantPlay = true
 	if (currentId() === id) sync()
 	else ctx.store.setValue(VALUES.currentItemId, id)
@@ -260,11 +280,11 @@ export async function pause() {
 	await TrackPlayer.pause()
 }
 
-export async function toggle() {
+export function toggle() {
 	if (picture()) return picture().playing ? pause() : play()
-	const { state } = await TrackPlayer.getPlaybackState()
-	if (state === State.Playing || state === State.Buffering || state === State.Loading) return pause()
-	return play()
+	// Decided from the last state the player reported, not by asking it:
+	// asking takes a moment, and the start has to happen inside the press.
+	return ctx?.playing ? pause() : play()
 }
 
 export async function seekTo(position) {
