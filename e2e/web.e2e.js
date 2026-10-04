@@ -150,7 +150,14 @@ const media = (tab = page) =>
 const watching = (tab = page) =>
 	tab.evaluate(() => {
 		const element = [...document.querySelectorAll("video")].find((v) => v !== window.rntp?.getMediaElement())
-		return element ? { time: element.currentTime, paused: element.paused } : null
+		return element
+			? {
+					time: element.currentTime,
+					paused: element.paused,
+					ready: element.readyState,
+					sound: element.webkitAudioDecodedByteCount ?? 0,
+				}
+			: null
 	})
 const idOf = (video) =>
 	Object.entries(peer.store.getTable(TABLES.items)).find(([, item]) => item.videoId === video.id)?.[0]
@@ -328,10 +335,12 @@ describe("listening", () => {
 		await see(page.getByLabel("Play")).click()
 		await waitFor(async () => (await clock()) > 1, { label: "audio playing" })
 		await see(page.getByRole("switch")).click()
-		await waitFor(async () => (await watching())?.paused === false && (await watching()).time > 2, {
-			timeout: 30_000,
-			label: "the stream plays",
-		})
+		// Playing for real: data at hand, the picture's clock moving, sound decoded
+		// (YouTube's audio comes as a separate track).
+		await waitFor(async () => (await watching())?.ready >= 3, { timeout: 30_000, label: "the stream loads" })
+		const from = (await watching()).time
+		await waitFor(async () => (await watching()).time > from + 1.5, { timeout: 10_000, label: "the stream plays" })
+		expect((await watching()).sound).toBeGreaterThan(0)
 		expect(peer.store.getCell(TABLES.copies, copyId(zoo, DEVICE_SERVER), "kind")).toBe("audio")
 		await see(page.getByRole("switch")).click()
 		const back = await clock()

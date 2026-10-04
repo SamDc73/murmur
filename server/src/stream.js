@@ -21,13 +21,24 @@ export function stream(store, { manifestOf, fetchUpstream = fetch }) {
 	const app = new Hono()
 	const manifests = new Map()
 
-	async function masterUrl(id, url) {
+	// One lookup per episode at a time; a failed one isn't kept.
+	function masterUrl(id, url) {
 		const known = manifests.get(id)
-		if (known && Date.now() - known.at < MANIFEST_FOR_MS) return known.url
-		const found = await manifestOf(url)
-		if (found) manifests.set(id, { url: found, at: Date.now() })
+		if (known && Date.now() - known.at < MANIFEST_FOR_MS) return known.found
+		const found = manifestOf(url).catch(() => "")
+		manifests.set(id, { found, at: Date.now() })
+		found.then((value) => value || manifests.delete(id))
 		return found
 	}
+
+	// Looked up ahead for the episode that's playing — yt-dlp takes a few
+	// seconds — so Watch starts on the stream itself.
+	const warm = (id) => {
+		const url = id && store.getCell(TABLES.items, id, "url")
+		if (url) masterUrl(id, url)
+	}
+	store.addValueListener(VALUES.currentItemId, (_store, _valueId, id) => warm(id))
+	warm(setting(store.getValues(), VALUES.currentItemId))
 
 	app.get("/:id/index.m3u8", async (c) => {
 		const id = c.req.param("id")

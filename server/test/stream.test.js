@@ -102,6 +102,25 @@ describe("the relay", () => {
 		expect(lines.length).toBe(3)
 	})
 
+	test("the episode that's playing is looked up ahead, once", async () => {
+		const store = createMergeableStore("t")
+		store.setRow(TABLES.items, "one", {
+			...newItem({ url: "https://youtu.be/x", videoId: "x", order: "a0", addedAt: 1 }),
+		})
+		let lookups = 0
+		const app = stream(store, {
+			manifestOf: async () => {
+				lookups++
+				return `${MANIFEST}/master`
+			},
+			fetchUpstream: async () => new Response(MASTER),
+		})
+		store.setValue(VALUES.currentItemId, "one")
+		expect(lookups).toBe(1)
+		await app.request("/one/index.m3u8")
+		expect(lookups).toBe(1)
+	})
+
 	test("relays YouTube only, and only for episodes it has", async () => {
 		const { app } = setup()
 		const elsewhere = Buffer.from("https://example.com/secret").toString("base64url")

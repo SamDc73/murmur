@@ -48,6 +48,7 @@
 		"expo-system-ui": "~57.0.4",
 		"expo-task-manager": "~57.0.21",
 		"expo-video": "~57.0.5",
+		"hls.js": "^1.7.3",
 		"lucide-react-native": "^1.51.0",
 		"nativewind": "5.0.0-rc.0",
 		"react": "19.2.3",
