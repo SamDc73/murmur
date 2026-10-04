@@ -76,11 +76,12 @@ export function keyToFollow(queue, afterId, movingId) {
 /**
  * What plays after `currentId`: the episode below it, like a playlist. Past
  * the last one there is nothing — the queue stops, it never wraps. With
- * nothing current, it is the top.
+ * nothing current, it is the top. An episode whose link failed (a removed
+ * or DRM-protected video) is stepped over: it stays, but can't play.
  */
 export function nextUp(queue, currentId) {
 	const at = queue.findIndex(([id]) => id === currentId)
-	return queue[at + 1]?.[0] ?? ""
+	return queue.slice(at + 1).find(([, row]) => !row.error)?.[0] ?? ""
 }
 
 /** The episode above `currentId`, or "" at the top. */

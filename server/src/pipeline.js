@@ -62,7 +62,9 @@ export function createPipeline({ store, config, tools, log = console }) {
 		const currentId = setting(values, VALUES.currentItemId)
 		const queue = queueOf(items)
 		const ordered = [...queue.filter(([id]) => id === currentId), ...queue.filter(([id]) => id !== currentId)]
-		const ahead = new Set(ordered.slice(0, config.downloadAhead ?? Number.POSITIVE_INFINITY).map(([id]) => id))
+		// The window counts only episodes that can download.
+		const playable = ordered.filter(([, row]) => !row.error)
+		const ahead = new Set(playable.slice(0, config.downloadAhead ?? Number.POSITIVE_INFINITY).map(([id]) => id))
 		const work = []
 
 		for (const [id, row] of ordered) {

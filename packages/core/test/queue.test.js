@@ -102,6 +102,8 @@ describe("now, next, later", () => {
 		expect(nextUp(q, "d")).toBe("")
 		expect(nextUp(q, "")).toBe("now")
 		expect(nextUp([], "now")).toBe("")
+		const broken = queueOf({ ...t, b: { ...t.b, error: "This video is DRM protected" } })
+		expect(nextUp(broken, "now")).toBe("c")
 	})
 	test("previousOf is the episode above, and nothing at the top", () => {
 		const q = queueOf(t)
