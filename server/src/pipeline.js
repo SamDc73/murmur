@@ -37,11 +37,15 @@ const DEVICE_TOUCH_MS = 60 * 60 * 1000
 // later: a failed one is tried again after a while, up to this many tries.
 const DOWNLOAD_TRIES = 3
 const RETRY_AFTER_MS = 2 * 60 * 1000
+// Waiting for disk: space can come back without the store changing (a file
+// deleted, an old image pruned), so look again now and then.
+const ROOM_CHECK_MS = 60 * 1000
 
 export function createPipeline({ store, config, tools, log = console }) {
 	const inflight = new Set()
 	let tickTimer = null
 	let retryTimer = null
+	let roomTimer = null
 	const retryAfter = config.retryAfterMs ?? RETRY_AFTER_MS
 	// Transcripts share the probe slots: both are short yt-dlp calls.
 	const running = { probe: 0, download: 0, transcript: 0 }
@@ -128,6 +132,7 @@ export function createPipeline({ store, config, tools, log = console }) {
 				([id], at) => at > nearest && !inflight.has(id) && copies[copyId(id, DEVICE_SERVER)]?.state === COPY_STATE.ready
 			)
 			if (furthest) work.push({ kind: "drop", id: furthest[0] })
+			work.push({ kind: "wait" })
 		}
 		return work
 	}
@@ -141,6 +146,10 @@ export function createPipeline({ store, config, tools, log = console }) {
 			else if (job.kind === "download" && running.download < config.downloadConcurrency) start(job, downloadItem)
 			else if (job.kind === "evict") evictItem(job.id)
 			else if (job.kind === "drop") dropFile(job.id)
+			else if (job.kind === "wait") {
+				clearTimeout(roomTimer)
+				roomTimer = setTimeout(schedule, config.roomCheckMs ?? ROOM_CHECK_MS)
+			}
 		}
 	}
 
@@ -412,6 +421,7 @@ export function createPipeline({ store, config, tools, log = console }) {
 			if (tickTimer !== null) clearTimeout(tickTimer)
 			if (deviceTimer !== null) clearInterval(deviceTimer)
 			clearTimeout(retryTimer)
+			clearTimeout(roomTimer)
 		},
 		// For tests and /api/info.
 		plan,

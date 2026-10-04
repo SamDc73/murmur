@@ -345,6 +345,26 @@ describe("the disk", () => {
 		pipeline.stop()
 	})
 
+	test("space that comes back on its own is noticed, without the store changing", async () => {
+		const store = createMergeableStore("t")
+		const tools = realTmpTools()
+		let free = 0
+		tools.freeBytes = () => free
+		const pipeline = createPipeline({ store, config: { ...config, keepFree: 5, roomCheckMs: 50 }, tools, log: quiet })
+		pipeline.start()
+		store.setRow(TABLES.items, "one", {
+			...newItem({ url: "u", videoId: "dQw4w9WgXcQ", order: "a0", addedAt: 1 }),
+			resolvedAt: 1,
+			captionLang: "",
+		})
+		const state = () => store.getCell(TABLES.copies, copyId("one", DEVICE_SERVER), "state")
+		await new Promise((resolve) => setTimeout(resolve, 200))
+		expect(state()).toBeUndefined()
+		free = 100 // freed outside the store
+		await until(() => state() === COPY_STATE.ready)
+		pipeline.stop()
+	})
+
 	test("a download starts only if it fits, judged by the episode's length", async () => {
 		const store = createMergeableStore("t")
 		const tools = realTmpTools()
