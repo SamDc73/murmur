@@ -25,6 +25,11 @@ async function open() {
 	await localPersister.startAutoLoad()
 	await localPersister.startAutoSave()
 	ensureDevice(local)
+	// How the connection stood belongs to the last run (closing a tab even
+	// reads as "offline" in Firefox): start out connecting. Except when the
+	// server turned this device away — a reload won't change that, and the
+	// sign-in screen should hold still.
+	if (local.getValue(LOCAL_KEYS.syncState) !== "locked") local.setValue(LOCAL_KEYS.syncState, "connecting")
 	// A web app served by the server finds it next door — no need to wait on it.
 	if (!local.getValue(LOCAL_KEYS.serverUrl)) {
 		servedByServer().then((origin) => origin && local.setValue(LOCAL_KEYS.serverUrl, origin))
