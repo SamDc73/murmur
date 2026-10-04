@@ -21,7 +21,7 @@ Then open `http://<server address>`. The settings are in `docker-compose.yml`:
 - `PUBLIC_URL`: where phones reach the server, for the pairing code in `docker compose logs server`.
 - `SERVER_NAME`, `YTDLP_ARGS`: what the apps call it; extra yt-dlp flags.
 
-If YouTube asks you to sign in, put a `cookies.txt` in the `data` volume.
+If YouTube asks you to sign in, put a `cookies.txt` in the `data` volume. To update: `docker compose pull && docker compose up -d && docker image prune -f` (the last part clears the old images).
 
 ## Phone
 
