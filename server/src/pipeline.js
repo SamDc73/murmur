@@ -56,8 +56,8 @@ export function createPipeline({ store, config, tools, log = console }) {
 		}, TICK_DEBOUNCE_MS)
 	}
 
-	// Every item, in play order, current first — so the next thing to play is
-	// always the next thing fetched. Everything downloads as it's added, until
+	// Every item, in play order from what's playing — so the next thing to play
+	// is always the next thing fetched. Everything downloads as it's added, until
 	// only `keepFree` of the disk is left; then the episode furthest down lets
 	// its file go for one nearer the top. A played one lets its file go too
 	// (Play again fetches it back).
@@ -68,7 +68,10 @@ export function createPipeline({ store, config, tools, log = console }) {
 		const keep = setting(values, VALUES.keepOnServer)
 		const currentId = setting(values, VALUES.currentItemId)
 		const queue = queueOf(items)
-		const ordered = [...queue.filter(([id]) => id === currentId), ...queue.filter(([id]) => id !== currentId)]
+		// In play order: what's playing, the ones after it, then the ones above
+		// it (they play only if picked).
+		const at = queue.findIndex(([id]) => id === currentId)
+		const ordered = at < 0 ? queue : [...queue.slice(at), ...queue.slice(0, at)]
 		let work = []
 
 		for (const [id, row] of ordered) {

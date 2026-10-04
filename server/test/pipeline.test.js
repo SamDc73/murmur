@@ -316,6 +316,35 @@ describe("the disk", () => {
 		pipeline.stop()
 	})
 
+	test("downloads go in play order: what's playing, the ones after it, then the ones above", async () => {
+		const store = createMergeableStore("t")
+		const tools = realTmpTools()
+		const order = []
+		const download = tools.download
+		tools.download = async (item, onProgress) => {
+			order.push(item.itemId)
+			return download(item, onProgress)
+		}
+		for (const [id, key] of [
+			["a", "a0"],
+			["b", "a1"],
+			["c", "a2"],
+			["d", "a3"],
+		]) {
+			store.setRow(TABLES.items, id, {
+				...newItem({ url: id, videoId: "dQw4w9WgXcQ", order: key, addedAt: 1 }),
+				resolvedAt: 1,
+				captionLang: "",
+			})
+		}
+		store.setValue(VALUES.currentItemId, "c")
+		const pipeline = createPipeline({ store, config, tools, log: quiet })
+		pipeline.start()
+		await until(() => order.length === 4)
+		expect(order).toEqual(["c", "d", "a", "b"])
+		pipeline.stop()
+	})
+
 	test("a download starts only if it fits, judged by the episode's length", async () => {
 		const store = createMergeableStore("t")
 		const tools = realTmpTools()
