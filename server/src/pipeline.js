@@ -33,10 +33,16 @@ import { metadataFrom } from "./ytdlp.js"
 const TICK_DEBOUNCE_MS = 150
 const PROGRESS_EVERY_MS = 750
 const DEVICE_TOUCH_MS = 60 * 60 * 1000
+// YouTube now and then refuses a download (a 403) that goes through a little
+// later: a failed one is tried again after a while, up to this many tries.
+const DOWNLOAD_TRIES = 3
+const RETRY_AFTER_MS = 2 * 60 * 1000
 
 export function createPipeline({ store, config, tools, log = console }) {
 	const inflight = new Set()
 	let tickTimer = null
+	let retryTimer = null
+	const retryAfter = config.retryAfterMs ?? RETRY_AFTER_MS
 	// Transcripts share the probe slots: both are short yt-dlp calls.
 	const running = { probe: 0, download: 0, transcript: 0 }
 	const listeners = []
@@ -90,6 +96,12 @@ export function createPipeline({ store, config, tools, log = console }) {
 				work.push({ kind: "evict", id })
 			} else if (copy.state === COPY_STATE.downloading || copy.state === COPY_STATE.pending) {
 				// The server died mid-download: the file is not there, start over.
+				work.push({ kind: "download", id, mediaKind: copy.kind || wanted })
+			} else if (
+				copy.state === COPY_STATE.error &&
+				(copy.tries ?? 1) < DOWNLOAD_TRIES &&
+				Date.now() - copy.updatedAt >= retryAfter
+			) {
 				work.push({ kind: "download", id, mediaKind: copy.kind || wanted })
 			}
 		}
@@ -250,9 +262,11 @@ export function createPipeline({ store, config, tools, log = console }) {
 			log.info(`[pipeline] dropped ${id}: removed while downloading`)
 		}
 		removeFiles(id, { keepTranscript: true })
+		const before = store.getRow(TABLES.copies, cid)
 		store.setRow(TABLES.copies, cid, {
 			...newCopy({ itemId: id, deviceId: DEVICE_SERVER, kind: mediaKind, updatedAt: Date.now() }),
 			state: COPY_STATE.downloading,
+			tries: (before.state === COPY_STATE.error ? (before.tries ?? 1) : 0) + 1,
 		})
 		log.info(`[pipeline] download ${mediaKind} ${row.title || row.url}`)
 		let lastProgressAt = 0
@@ -292,6 +306,9 @@ export function createPipeline({ store, config, tools, log = console }) {
 			const message = String(error.message ?? error).slice(0, 300)
 			log.warn(`[pipeline] download failed ${row.title || row.url}: ${message}`)
 			store.setPartialRow(TABLES.copies, cid, { state: COPY_STATE.error, error: message, updatedAt: Date.now() })
+			// Nothing else may change meanwhile, so look again when the retry is due.
+			clearTimeout(retryTimer)
+			retryTimer = setTimeout(schedule, retryAfter)
 		}
 	}
 
@@ -390,6 +407,7 @@ export function createPipeline({ store, config, tools, log = console }) {
 			listeners.length = 0
 			if (tickTimer !== null) clearTimeout(tickTimer)
 			if (deviceTimer !== null) clearInterval(deviceTimer)
+			clearTimeout(retryTimer)
 		},
 		// For tests and /api/info.
 		plan,

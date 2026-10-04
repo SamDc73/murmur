@@ -317,6 +317,53 @@ describe("the disk", () => {
 	})
 })
 
+describe("a refused download", () => {
+	test("is tried again a little later, three tries in all", async () => {
+		const store = createMergeableStore("t")
+		const tools = realTmpTools()
+		let calls = 0
+		const download = tools.download
+		tools.download = async (item, onProgress) => {
+			calls++
+			if (calls < 3) throw new Error("unable to download video data: HTTP Error 403: Forbidden")
+			return download(item, onProgress)
+		}
+		const pipeline = createPipeline({ store, config: { ...config, retryAfterMs: 50 }, tools, log: quiet })
+		pipeline.start()
+		store.setRow(TABLES.items, "one", {
+			...newItem({ url: "u", videoId: "dQw4w9WgXcQ", order: "a0", addedAt: 1 }),
+			resolvedAt: 1,
+			captionLang: "",
+		})
+		const copy = () => store.getRow(TABLES.copies, copyId("one", DEVICE_SERVER))
+		await until(() => copy().state === COPY_STATE.ready)
+		expect([calls, copy().tries]).toEqual([3, 3])
+		pipeline.stop()
+	})
+
+	test("gives up after three, until Try again", async () => {
+		const store = createMergeableStore("t")
+		const tools = realTmpTools()
+		let calls = 0
+		tools.download = async () => {
+			calls++
+			throw new Error("HTTP Error 403: Forbidden")
+		}
+		const pipeline = createPipeline({ store, config: { ...config, retryAfterMs: 20 }, tools, log: quiet })
+		pipeline.start()
+		store.setRow(TABLES.items, "one", {
+			...newItem({ url: "u", videoId: "dQw4w9WgXcQ", order: "a0", addedAt: 1 }),
+			resolvedAt: 1,
+			captionLang: "",
+		})
+		await until(() => calls === 3)
+		await new Promise((resolve) => setTimeout(resolve, 200))
+		expect(calls).toBe(3)
+		expect(store.getCell(TABLES.copies, copyId("one", DEVICE_SERVER), "state")).toBe(COPY_STATE.error)
+		pipeline.stop()
+	})
+})
+
 describe("removal mid-job", () => {
 	test("removing an item while it downloads leaves no ghost row, copy row or file", async () => {
 		const store = createMergeableStore("t")
