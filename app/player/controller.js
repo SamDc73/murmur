@@ -1,4 +1,4 @@
-import { copiesByItem, nextUp, previousOf, queueOf, setting, TABLES, VALUES } from "@murmur/core"
+import { copiesByItem, introEnd, nextUp, parseChapters, previousOf, queueOf, setting, TABLES, VALUES } from "@murmur/core"
 import TrackPlayer, { AppKilledPlaybackBehavior, Capability, Event, RepeatMode, State } from "react-native-track-player"
 import { LOCAL_KEYS } from "../store/local"
 import { picture } from "./picture"
@@ -175,12 +175,18 @@ async function startPlaying() {
 	await TrackPlayer.play()
 }
 
-/** Where an episode picks up: its saved position, unless that was the end. */
+/**
+ * Where an episode picks up: its saved position, unless that was the end —
+ * and past its intro, if it would start in one and Skip intros is on. Only
+ * here, as it loads: seeking back into an intro plays it.
+ */
 function resumeAt(id) {
 	const row = ctx.store.getRow(TABLES.items, id)
-	const position = Number(row.position) || 0
 	const duration = Number(row.duration) || 0
-	return duration > 0 && position >= duration - ENDED_WITHIN_S ? 0 : position
+	const saved = Number(row.position) || 0
+	const position = duration > 0 && saved >= duration - ENDED_WITHIN_S ? 0 : saved
+	const intro = setting(ctx.store.getValues(), VALUES.skipIntro) ? introEnd(parseChapters(row)) : 0
+	return Math.max(position, intro)
 }
 
 // ---- player → store -------------------------------------------------------

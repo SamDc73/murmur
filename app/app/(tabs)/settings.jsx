@@ -27,6 +27,7 @@ export default function SettingsScreen() {
 			<ScrollView contentContainerStyle={{ paddingBottom: 32 }} keyboardShouldPersistTaps="handled">
 				<View className="mx-auto w-full max-w-form gap-lg px-md pt-xs">
 					<ServerGroup />
+					<ListeningGroup />
 					<DownloadsGroup />
 					{CAN_DOWNLOAD ? <PhoneGroup /> : null}
 					<AboutGroup />
@@ -112,6 +113,18 @@ function SaveButton({ onPress }) {
 		<Button variant="tonal" size="sm" onPress={onPress}>
 			<Text>Save</Text>
 		</Button>
+	)
+}
+
+function ListeningGroup() {
+	const skipIntro = useSetting(VALUES.skipIntro)
+	const { setSetting } = useActions()
+	return (
+		<Group title="Listening">
+			<Row label="Skip intros">
+				<Toggle value={skipIntro} onChange={(value) => setSetting(VALUES.skipIntro, value)} label="Skip intros" />
+			</Row>
+		</Group>
 	)
 }
 

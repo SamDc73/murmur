@@ -4,7 +4,7 @@ Paste YouTube links — one, a whole list, or a Google Doc full of them — and 
 
 - Your server downloads every episode with yt-dlp as soon as it's added, keeping some disk free (`KEEP_FREE_MB`, 500); the phone and the web app share one queue, live.
 - The phone keeps its own copies, so it plays without the server; downloads go to the server, the phone, or both.
-- Plays in the background with lock-screen, notification and headset controls. Audio by default, video when you want it.
+- Plays in the background with lock-screen, notification and headset controls. Audio by default, video when you want it. Skips intros, when the chapters mark one.
 - Chapters, a synced transcript, the description, and a note of your own on each episode. History of everything played.
 
 ## Run it

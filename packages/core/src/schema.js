@@ -39,6 +39,8 @@ export const VALUES = {
 	videoHeight: "videoHeight",
 	audioFormat: "audioFormat",
 	playbackRate: "playbackRate",
+	// An episode starting from the top starts past its intro (introEnd).
+	skipIntro: "skipIntro",
 }
 
 const DEFAULT_VALUES = {
@@ -49,6 +51,7 @@ const DEFAULT_VALUES = {
 	// and yt-dlp can pull it without re-encoding. opus is smaller; also native.
 	[VALUES.audioFormat]: "m4a",
 	[VALUES.playbackRate]: 1,
+	[VALUES.skipIntro]: true,
 }
 
 export const AUDIO_FORMATS = ["m4a", "opus"]
@@ -126,6 +129,26 @@ export function parseChapters(item) {
 	} catch {
 		return []
 	}
+}
+
+// Chapter titles that mean the show hasn't started yet, as real episodes
+// name them: Intro, Introduction (to …), Introducing …, Meet …, Cold open,
+// Preview, (Episode) highlights, Teaser, Trailer — and YouTube's
+// "<Untitled Chapter 1>", the stretch before a creator's first chapter.
+const INTRO =
+	/^(?:(?:intro|introduction|introducing|meet|cold open|preview|(?:episode )?highlights?|teaser|trailer)\b|<untitled chapter 1>)/i
+// Real intros run under three minutes; an "Introduction" of half an hour is
+// the episode itself.
+const INTRO_AT_MOST_S = 240
+
+/** Where an episode's intro ends: past its opening intro chapters, if that's within four minutes. 0 for none. */
+export function introEnd(chapters) {
+	let end = 0
+	for (let i = 0; i < chapters.length - 1 && INTRO.test(chapters[i].title.trim()); i++) {
+		if (chapters[i + 1].start > INTRO_AT_MOST_S) break
+		end = chapters[i + 1].start
+	}
+	return end
 }
 
 // A value with its default. Defaults are never written into the store: a
