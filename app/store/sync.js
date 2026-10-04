@@ -13,6 +13,8 @@ import { LOCAL, LOCAL_KEYS, wsUrl } from "./local"
 // local store so any screen can show it.
 
 const BACKOFF_MS = [1000, 2000, 5000, 10000, 30000]
+const KNOCK_MS = 5000
+const STAYS_WHILE_RETRYING = new Set(["locked", "offline"])
 
 export function useSync() {
 	const store = useStore()
@@ -64,8 +66,9 @@ function keepConnected({ store, local, serverUrl, token }) {
 	}
 
 	async function connect() {
-		// Locked stays locked while it asks again, so the sign-in screen holds still.
-		if (local.getValue(LOCAL_KEYS.syncState) !== "locked") report("connecting")
+		// Locked or offline stays so while it asks again: the sign-in screen and
+		// the queue's notice hold still instead of blinking at every retry.
+		if (!STAYS_WHILE_RETRYING.has(local.getValue(LOCAL_KEYS.syncState))) report("connecting")
 		const answer = await knock(serverUrl, token)
 		if (stopped) return
 		if (answer === "unauthorised") return report("locked", token ? "wrong password" : "")
@@ -107,16 +110,25 @@ function keepConnected({ store, local, serverUrl, token }) {
 export async function knock(serverUrl, token) {
 	const base = normaliseServerUrl(serverUrl)
 	try {
-		const health = await (await fetch(`${base}/api/health`)).json()
+		const health = await (await fetchSoon(`${base}/api/health`)).json()
 		if (health?.ok !== true) return "unreachable"
 		if (!health.locked) return "ok"
 		if (!token) return "unauthorised"
-		const response = await fetch(`${base}/api/info`, { headers: { Authorization: `Bearer ${token}` } })
+		const response = await fetchSoon(`${base}/api/info`, { headers: { Authorization: `Bearer ${token}` } })
 		if (response.status === 401) return "unauthorised"
 		return response.ok ? "ok" : "unreachable"
 	} catch {
 		return "unreachable"
 	}
+}
+
+// On a phone, fetch never gives up on an address nobody answers at: Android
+// waits out TCP's two minutes, showing "Connecting…" all the while. A knock
+// gets five seconds. (React Native's AbortSignal has no .timeout().)
+function fetchSoon(url, init) {
+	const controller = new AbortController()
+	const timer = setTimeout(() => controller.abort(), KNOCK_MS)
+	return fetch(url, { ...init, signal: controller.signal }).finally(() => clearTimeout(timer))
 }
 
 /** One short sync, for the background task: connect, exchange, leave. */
