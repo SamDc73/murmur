@@ -29,6 +29,7 @@ function fakeTools(overrides = {}) {
 		},
 		listFiles: () => [...files],
 		removeFile: (name) => files.delete(name),
+		freeBytes: () => Number.POSITIVE_INFINITY,
 		...overrides,
 	}
 }
@@ -270,11 +271,22 @@ describe("pipeline", () => {
 	})
 })
 
-describe("the download window", () => {
-	test("files only for what's coming up; played or moved down, they go", async () => {
+describe("the disk", () => {
+	test("everything downloads until the disk is short; then the furthest down makes room", async () => {
 		const store = createMergeableStore("t")
 		const tools = realTmpTools()
-		const pipeline = createPipeline({ store, config: { ...config, downloadAhead: 2 }, tools, log: quiet })
+		// A pretend disk: each file takes 3, and 5 must stay free.
+		let free = 10
+		const download = tools.download
+		tools.download = async (item, onProgress) => {
+			free -= 3
+			return download(item, onProgress)
+		}
+		tools.removeFile = (name) => {
+			if (tools.files.delete(name)) free += 3
+		}
+		tools.freeBytes = () => free
+		const pipeline = createPipeline({ store, config: { ...config, keepFree: 5 }, tools, log: quiet })
 		pipeline.start()
 		for (const [id, order] of [
 			["a", "a0"],
@@ -291,17 +303,16 @@ describe("the download window", () => {
 		const state = (id) => store.getCell(TABLES.copies, copyId(id, DEVICE_SERVER), "state")
 		await until(() => state("a") === COPY_STATE.ready && state("b") === COPY_STATE.ready)
 		await new Promise((resolve) => setTimeout(resolve, 200))
-		expect([state("c"), state("d")]).toEqual([undefined, undefined])
+		expect([state("c"), state("d")]).toEqual([undefined, undefined]) // 4 free: short
 
-		// Played: its file goes, and the next one comes up.
-		store.setCell(TABLES.items, "a", "doneAt", Date.now())
-		await until(() => state("a") === undefined && state("c") === COPY_STATE.ready)
-		expect(tools.files.has("a.m4a")).toBe(false)
-
-		// Moved to the top: it downloads, and what slid out of the window lets go.
+		// Moved to the top: the furthest down below it (b) lets go, and it downloads.
 		store.setCell(TABLES.items, "d", "order", "Zz")
-		await until(() => state("d") === COPY_STATE.ready && state("c") === undefined)
-		expect(state("b")).toBe(COPY_STATE.ready)
+		await until(() => state("d") === COPY_STATE.ready && state("b") === undefined)
+		expect(state("a")).toBe(COPY_STATE.ready)
+
+		// Played: its file goes, and the next one down gets the room.
+		store.setCell(TABLES.items, "d", "doneAt", Date.now())
+		await until(() => state("d") === undefined && state("b") === COPY_STATE.ready)
 		pipeline.stop()
 	})
 })

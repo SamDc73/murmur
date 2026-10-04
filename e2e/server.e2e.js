@@ -365,8 +365,9 @@ describe("devices agree", () => {
 		// yt-dlp finishes the file it was writing; then the server drops it.
 		await waitFor(() => server.log.includes(`dropped ${id}`), { timeout: 120_000, label: "download dropped" })
 		await waitFor(() => !phone.store.hasRow(TABLES.copies, `${id}:server`), { label: "copy row gone" })
+		// Its transcript runs beside the download, and clears up after itself when it ends.
+		await waitFor(() => filesOf(id).length === 0, { timeout: 60_000, label: "every file gone" })
 		expect(phone.store.hasRow(TABLES.items, id)).toBe(false)
-		expect(filesOf(id)).toEqual([])
 	})
 })
 

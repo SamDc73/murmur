@@ -68,9 +68,6 @@ export async function startServer({ port = 3790, token = "e2e-token", dataDir } 
 				HOST: "127.0.0.1",
 				DATA_DIR: dir,
 				MURMUR_PASSWORD: token,
-				// The suite queues more than a listener's window and expects each to
-				// download; the window itself has its own test (server/test).
-				DOWNLOAD_AHEAD: "50",
 				PUBLIC_URL: url,
 			},
 			stdout: "pipe",

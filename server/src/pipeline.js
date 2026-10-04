@@ -1,4 +1,4 @@
-import { readdirSync, statSync, unlinkSync } from "node:fs"
+import { readdirSync, statfsSync, statSync, unlinkSync } from "node:fs"
 import { basename, join } from "node:path"
 import {
 	COPY_STATE,
@@ -51,9 +51,10 @@ export function createPipeline({ store, config, tools, log = console }) {
 	}
 
 	// Every item, in play order, current first — so the next thing to play is
-	// always the next thing fetched. Details and transcripts for all of them;
-	// files only for the few coming up (`downloadAhead`). Anything further down,
-	// or played, lets its file go, and fetches it again if it comes back up.
+	// always the next thing fetched. Everything downloads as it's added, until
+	// only `keepFree` of the disk is left; then the episode furthest down lets
+	// its file go for one nearer the top. A played one lets its file go too
+	// (Play again fetches it back).
 	function plan() {
 		const items = store.getTable(TABLES.items)
 		const values = store.getValues()
@@ -62,10 +63,7 @@ export function createPipeline({ store, config, tools, log = console }) {
 		const currentId = setting(values, VALUES.currentItemId)
 		const queue = queueOf(items)
 		const ordered = [...queue.filter(([id]) => id === currentId), ...queue.filter(([id]) => id !== currentId)]
-		// The window counts only episodes that can download.
-		const playable = ordered.filter(([, row]) => !row.error)
-		const ahead = new Set(playable.slice(0, config.downloadAhead ?? Number.POSITIVE_INFINITY).map(([id]) => id))
-		const work = []
+		let work = []
 
 		for (const [id, row] of ordered) {
 			if (inflight.has(id)) continue
@@ -81,9 +79,7 @@ export function createPipeline({ store, config, tools, log = console }) {
 			}
 			const wanted = wantedKind(row, values)
 			const copy = copies[copyId(id, DEVICE_SERVER)]
-			if (!ahead.has(id)) {
-				if (holdsFile(copy)) work.push({ kind: "drop", id })
-			} else if (!copy) {
+			if (!copy) {
 				work.push({ kind: "download", id, mediaKind: wanted })
 			} else if (row.wantKind && copy.kind !== row.wantKind && copy.state !== COPY_STATE.downloading) {
 				// The other kind was asked for — even after the file went to a phone.
@@ -104,6 +100,18 @@ export function createPipeline({ store, config, tools, log = console }) {
 			if (!row.resolvedAt && !row.error) work.push({ kind: "probe", id })
 			// Played: the file goes ("Play again" fetches it back).
 			if (holdsFile(copies[copyId(id, DEVICE_SERVER)])) work.push({ kind: "drop", id })
+		}
+
+		// Short of disk: nothing new starts. If an episode still needs its file,
+		// the downloaded one furthest down below it makes room.
+		const downloads = work.filter((job) => job.kind === "download")
+		if (downloads.length > 0 && tools.freeBytes() < config.keepFree) {
+			work = work.filter((job) => job.kind !== "download")
+			const nearest = ordered.findIndex(([id]) => id === downloads[0].id)
+			const furthest = ordered.findLast(
+				([id], at) => at > nearest && !inflight.has(id) && copies[copyId(id, DEVICE_SERVER)]?.state === COPY_STATE.ready
+			)
+			if (furthest) work.push({ kind: "drop", id: furthest[0] })
 		}
 		return work
 	}
@@ -317,12 +325,12 @@ export function createPipeline({ store, config, tools, log = console }) {
 		log.info(`[pipeline] evicted ${id}: a phone has it and the server keeps nothing`)
 	}
 
-	// Not coming up soon, or played: the file and the server's copy row go
+	// Played, or making room: the file and the server's copy row go
 	// (the transcript stays). An evicted copy is left alone — a phone has it.
 	function dropFile(id) {
 		removeFiles(id, { keepTranscript: true })
 		store.delRow(TABLES.copies, copyId(id, DEVICE_SERVER))
-		log.info(`[pipeline] let go of ${store.getCell(TABLES.items, id, "title") || id}: not coming up soon`)
+		log.info(`[pipeline] let go of ${store.getCell(TABLES.items, id, "title") || id}`)
 	}
 
 	// Replacing or evicting the media keeps the transcript; removing the item does not.
@@ -414,6 +422,10 @@ export function realTools(config, ytdlp) {
 		transcript: (item) => ytdlp.fetchTranscript(config, item),
 		readDoc: (url) => readDoc(url),
 		listFiles: () => readdirSync(config.mediaDir),
+		freeBytes: () => {
+			const disk = statfsSync(config.mediaDir)
+			return disk.bavail * disk.bsize
+		},
 		removeFile: (name) => {
 			try {
 				unlinkSync(join(config.mediaDir, name))

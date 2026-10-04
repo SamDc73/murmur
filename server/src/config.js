@@ -25,9 +25,9 @@ export const CONFIG = {
 	// A datacenter IP often needs cookies to get past YouTube's bot check.
 	cookies: process.env.YTDLP_COOKIES ?? join(dataDir, "cookies.txt"),
 	downloadConcurrency: Number(process.env.DOWNLOAD_CONCURRENCY ?? 1),
-	// Files are kept for what's playing and the next ones, up to this many in
-	// all; the rest of the queue is fetched as it comes up.
-	downloadAhead: Number(process.env.DOWNLOAD_AHEAD ?? 3),
+	// Every episode downloads as soon as it's added, short of filling the
+	// disk: this much always stays free.
+	keepFree: Number(process.env.KEEP_FREE_MB ?? 500) * 1_000_000,
 	probeConcurrency: Number(process.env.PROBE_CONCURRENCY ?? 2),
 	deviceName: process.env.SERVER_NAME ?? "Server",
 }
