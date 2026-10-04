@@ -1,14 +1,14 @@
 import { clock } from "@murmur/core"
 import { memo, useCallback } from "react"
 import { FlatList, Pressable } from "react-native"
-import { useProgress } from "react-native-track-player"
+import { usePosition } from "../../player/picture"
 import { cn } from "../ui/cn"
 import { Text } from "../ui/Text"
 
 // The episode's chapters, as a table of contents: tap one to go there. The
 // one playing is marked.
 export function Chapters({ chapters, onSeek }) {
-	const { position } = useProgress(250)
+	const { position } = usePosition(250)
 	let active = -1
 	for (let index = 0; index < chapters.length; index++) if (chapters[index].start <= position) active = index
 	const renderItem = useCallback(

@@ -7,7 +7,6 @@ import Video from "lucide-react-native/icons/video"
 import { useState } from "react"
 import { Pressable, useWindowDimensions, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { useIsPlaying } from "react-native-track-player"
 import { Artwork } from "../components/Artwork"
 import { EmptyState } from "../components/EmptyState"
 import { ItemMenu } from "../components/ItemMenu"
@@ -21,6 +20,7 @@ import { Select } from "../components/ui/Select"
 import { Text } from "../components/ui/Text"
 import { VideoPane } from "../components/VideoPane"
 import { seekTo } from "../player/controller"
+import { usePlaying } from "../player/picture"
 import { sourceFor } from "../player/source"
 import { useActions, useCopies, useCurrentId, useDeviceId, useItem, useLocal, useSetting } from "../store/hooks"
 import { LOCAL_KEYS } from "../store/local"
@@ -78,7 +78,9 @@ export default function NowScreen() {
 		<View className="flex-1 bg-background" style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
 			{header}
 			<View className={cn("mx-auto w-full max-w-wide flex-1", wide ? "flex-row gap-2xl px-xl pb-lg" : "")}>
+				{/* Keyed: a new episode starts out listening. */}
 				<Player
+					key={currentId}
 					item={item}
 					itemId={currentId}
 					artWidth={artWidth}
@@ -97,7 +99,7 @@ function Player({ item, itemId, artWidth, className }) {
 	const token = useLocal(LOCAL_KEYS.token)
 	const rate = useSetting(VALUES.playbackRate)
 	const { setSetting } = useActions()
-	const { playing } = useIsPlaying()
+	const { playing } = usePlaying()
 	const [watching, setWatching] = useState(false)
 	const source = sourceFor({ copies, deviceId, serverUrl, token })
 	const server = copies[DEVICE_SERVER]
@@ -106,9 +108,9 @@ function Player({ item, itemId, artWidth, className }) {
 	return (
 		<View className={cn("gap-md", className)}>
 			<View className="items-center">
-				{watching && source ? (
+				{watching && source?.kind === MEDIA_KIND.video ? (
 					<View style={{ width: artWidth }}>
-						<VideoPane url={source.url} />
+						<VideoPane itemId={itemId} url={source.url} />
 					</View>
 				) : (
 					<Artwork uri={item.thumbnail} className="rounded-xl" style={{ width: artWidth, aspectRatio: 16 / 9 }} />

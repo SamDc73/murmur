@@ -1,5 +1,5 @@
 import TrackPlayer, { Event } from "react-native-track-player"
-import { next, pause, play, previous, toggle } from "./controller"
+import { next, pause, play, previous, seekBy, seekTo, toggle } from "./controller"
 
 // The headless half of the player: what the notification, the lock screen,
 // Bluetooth and headset buttons do. Registered in index.js so it exists even
@@ -13,7 +13,7 @@ export async function playbackService() {
 	TrackPlayer.addEventListener(Event.RemoteStop, () => TrackPlayer.stop())
 	TrackPlayer.addEventListener(Event.RemoteNext, next)
 	TrackPlayer.addEventListener(Event.RemotePrevious, previous)
-	TrackPlayer.addEventListener(Event.RemoteJumpForward, ({ interval }) => TrackPlayer.seekBy(interval))
-	TrackPlayer.addEventListener(Event.RemoteJumpBackward, ({ interval }) => TrackPlayer.seekBy(-interval))
-	TrackPlayer.addEventListener(Event.RemoteSeek, ({ position }) => TrackPlayer.seekTo(position))
+	TrackPlayer.addEventListener(Event.RemoteJumpForward, ({ interval }) => seekBy(interval))
+	TrackPlayer.addEventListener(Event.RemoteJumpBackward, ({ interval }) => seekBy(-interval))
+	TrackPlayer.addEventListener(Event.RemoteSeek, ({ position }) => seekTo(position))
 }

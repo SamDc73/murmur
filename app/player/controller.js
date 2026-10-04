@@ -1,6 +1,7 @@
 import { copiesByItem, nextUp, previousOf, queueOf, setting, TABLES, VALUES } from "@murmur/core"
 import TrackPlayer, { AppKilledPlaybackBehavior, Capability, Event, RepeatMode, State } from "react-native-track-player"
 import { LOCAL_KEYS } from "../store/local"
+import { picture } from "./picture"
 import { sourceFor } from "./source"
 
 // The bridge between the store and the track player, attached once per
@@ -207,8 +208,9 @@ async function onState({ state }) {
 }
 
 // The episode played to the end: it goes to History, and the one below it
-// starts. After the last one, nothing — the queue stops, no wrap.
-function finished() {
+// starts. After the last one, nothing — the queue stops, no wrap. A video
+// playing to its end (VideoPane) lands here too.
+export function finished() {
 	const { store } = ctx
 	const id = ctx.loaded?.id
 	if (!id || id !== currentId()) return
@@ -233,33 +235,44 @@ export function requestPlay(id) {
 	else ctx.store.setValue(VALUES.currentItemId, id)
 }
 
+/** The episode the player is on, or "". */
+export function currentEpisode() {
+	return ctx ? currentId() : ""
+}
+
+// Play, pause and the jumps drive the picture while one is on screen.
+
 export function play() {
 	if (!ctx) return
+	if (picture()) return picture().play()
 	const id = currentId() || nextUp(queue(), "")
 	if (id) requestPlay(id)
 }
 
 export async function pause() {
+	if (picture()) return picture().pause()
 	await TrackPlayer.pause()
 }
 
 export async function toggle() {
+	if (picture()) return picture().playing ? pause() : play()
 	const { state } = await TrackPlayer.getPlaybackState()
 	if (state === State.Playing || state === State.Buffering || state === State.Loading) return pause()
 	return play()
 }
 
 export async function seekTo(position) {
-	await TrackPlayer.seekTo(Math.max(0, position))
+	if (picture()) picture().currentTime = Math.max(0, position)
+	else await TrackPlayer.seekTo(Math.max(0, position))
 }
 
-export async function skipBack() {
-	await TrackPlayer.seekBy(-SKIP_BACK_S)
+export async function seekBy(seconds) {
+	if (picture()) picture().seekBy(seconds)
+	else await TrackPlayer.seekBy(seconds)
 }
 
-export async function skipForward() {
-	await TrackPlayer.seekBy(SKIP_FORWARD_S)
-}
+export const skipBack = () => seekBy(-SKIP_BACK_S)
+export const skipForward = () => seekBy(SKIP_FORWARD_S)
 
 /** The episode below this one; this one stays in the queue where it was. */
 export function next() {
@@ -271,7 +284,7 @@ export function next() {
 /** Like every podcast app: early on, the episode above; later, the start of this one. */
 export async function previous() {
 	if (!ctx) return
-	const { position } = await TrackPlayer.getProgress()
+	const position = picture()?.currentTime ?? (await TrackPlayer.getProgress()).position
 	const id = previousOf(queue(), currentId())
 	if (position > RESTART_AFTER_S || !id) return seekTo(0)
 	requestPlay(id)

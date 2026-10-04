@@ -1,7 +1,7 @@
 import { cueIndexAt } from "@murmur/core"
 import { useCallback, useEffect, useRef } from "react"
 import { FlatList, View } from "react-native"
-import { useProgress } from "react-native-track-player"
+import { usePosition } from "../../player/picture"
 import { useTranscript } from "../../store/server"
 import { Text } from "../ui/Text"
 import { Line } from "./Chapters"
@@ -12,7 +12,7 @@ import { Line } from "./Chapters"
 // there and it follows again.
 export function Transcript({ itemId, lang, following, onFollowingChange, onSeek }) {
 	const { data: cues, isPending, isError } = useTranscript(itemId, lang)
-	const { position } = useProgress(250)
+	const { position } = usePosition(250)
 	const list = useRef(null)
 	const active = cues ? cueIndexAt(cues, position) : -1
 	// The line the list keeps in view: the spoken one, while following.
