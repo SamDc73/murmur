@@ -31,11 +31,16 @@ const mark = (ink, dot, scale = 1) =>
 	`<g transform="translate(512 512) scale(${scale}) translate(-512 -512)">` +
 	`<path d="${MARK.path}" fill="none" stroke="${ink}" stroke-width="${MARK.stroke}" stroke-linecap="round" stroke-linejoin="round"/>` +
 	`<circle cx="${MARK.ball.cx}" cy="${MARK.ball.cy}" r="${MARK.ball.r}" fill="${dot}"/></g>`
-const favicon =
-	`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">` +
-	`<rect width="1024" height="1024" rx="${FAVICON.tileRadius}" fill="${blue}"/>` +
-	`<path d="${FAVICON.path}" fill="none" stroke="${paper}" stroke-width="${FAVICON.stroke}" stroke-linecap="round" stroke-linejoin="round"/>` +
-	`<circle cx="${FAVICON.ball.cx}" cy="${FAVICON.ball.cy}" r="${FAVICON.ball.r}" fill="${ball}"/></svg>`
+// The tab icon: the mark alone on the tab, in the app's ink — light or dark
+// with the browser. `style` is the colouring; the ICO fallback can't switch,
+// so it takes the light one.
+const favicon = (style) =>
+	`<svg xmlns="http://www.w3.org/2000/svg" viewBox="${FAVICON.viewBox}"><title>Murmur</title><style>${style}</style>` +
+	`<path class="ink" d="${MARK.path}" fill="none" stroke-width="${FAVICON.stroke}" stroke-linecap="round" stroke-linejoin="round"/>` +
+	`<circle class="dot" cx="${FAVICON.ball.cx}" cy="${FAVICON.ball.cy}" r="${FAVICON.ball.r}"/></svg>`
+const inks = ({ ink, dot }) => `.ink{stroke:${ink}}.dot{fill:${dot}}`
+const lightFavicon = favicon(inks(light))
+const adaptiveFavicon = favicon(`${inks(light)}@media (prefers-color-scheme:dark){${inks(dark)}}`)
 
 const files = [
 	["assets/icon.png", 1024, canvas(mark(paper, ball), fill(blue))],
@@ -56,14 +61,18 @@ for (const [path, size, svg] of files) {
 	writeFileSync(here(path), await render(svg, size))
 	console.log(`${path}  ${size}×${size}`)
 }
-// The tab icon is drawn at each size it's shown at, not shrunk from a big
-// one, so 16 px stays crisp. Expo serves public/favicon.ico as it is.
+// The web app's icons, linked from public/index.html: the SVG for browsers
+// that take one (light or dark with the tab), an ICO for the rest — each size
+// drawn at that size, so 16 px stays crisp — and the full icon for a phone's
+// home screen.
+mkdirSync(here("public"), { recursive: true })
+writeFileSync(here("public/favicon.svg"), `${adaptiveFavicon}\n`)
 const tabSizes = [16, 32, 48]
 const tabIcons = []
-for (const size of tabSizes) tabIcons.push(await render(favicon, size))
-mkdirSync(here("public"), { recursive: true })
+for (const size of tabSizes) tabIcons.push(await render(lightFavicon, size))
 writeFileSync(here("public/favicon.ico"), await packIco(tabIcons))
-console.log(`public/favicon.ico  ${tabSizes.join(", ")} px`)
+writeFileSync(here("public/apple-touch-icon.png"), await render(canvas(mark(paper, ball), fill(blue)), 180))
+console.log(`public/favicon.svg · favicon.ico (${tabSizes.join(", ")} px) · apple-touch-icon.png (180 px)`)
 await browser.close()
 
 // The status-bar icon while playing: the mark as a white Android vector, its
