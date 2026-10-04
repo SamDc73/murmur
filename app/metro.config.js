@@ -1,6 +1,6 @@
 const path = require("node:path")
 const { getDefaultConfig } = require("expo/metro-config")
-const { withNativeWind } = require("nativewind/metro")
+const { withNativewind } = require("nativewind/metro")
 
 const config = getDefaultConfig(__dirname)
 // Resolve @murmur/core from the workspace root.
@@ -21,4 +21,7 @@ config.resolver.resolveRequest = (context, moduleName, platform) => {
 	return context.resolveRequest(context, moduleName, platform)
 }
 
-module.exports = withNativeWind(config, { input: "./global.css" })
+// NativeWind 5 gives every React Native component `className` at resolve time
+// (it wraps the resolver above, keeping it). global.css is imported once, in
+// app/_layout.jsx.
+module.exports = withNativewind(config)
