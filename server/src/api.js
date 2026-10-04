@@ -7,6 +7,7 @@ import { Hono } from "hono"
 //   GET    /api/history      what's been played, newest first
 //   POST   /api/queue        any text with YouTube or Google Docs links in it
 //   PATCH  /api/queue/:id    {"index": 0} moves it · {"played": true} to History, false back
+//                            · {"note": "…"} replaces its note
 //   DELETE /api/queue/:id    gone everywhere, files too
 //
 // Every change goes through the same functions as the apps' buttons, and
@@ -30,6 +31,7 @@ export function api(store, actions) {
 		playing: id === setting(store.getValues(), VALUES.currentItemId),
 		ready: store.getCell(TABLES.copies, copyId(id, DEVICE_SERVER), "state") === COPY_STATE.ready,
 		error: row.error || null,
+		note: row.note || "",
 		playedAt: row.doneAt ? new Date(row.doneAt).toISOString() : null,
 	})
 
@@ -48,6 +50,7 @@ export function api(store, actions) {
 		const body = await c.req.json().catch(() => ({}))
 		if (body.played === true) actions.markDone(id)
 		if (body.played === false) actions.requeue(id)
+		if (typeof body.note === "string") actions.setNote(id, body.note)
 		if (Number.isInteger(body.index)) {
 			const queue = queueOf(items())
 			const from = queue.findIndex(([rowId]) => rowId === id)

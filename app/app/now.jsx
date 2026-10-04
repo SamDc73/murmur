@@ -6,6 +6,7 @@ import Music2 from "lucide-react-native/icons/music-2"
 import Video from "lucide-react-native/icons/video"
 import { useState } from "react"
 import { Pressable, useWindowDimensions, View } from "react-native"
+import { KeyboardAvoidingView, useKeyboardState } from "react-native-keyboard-controller"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Artwork } from "../components/Artwork"
 import { EmptyState } from "../components/EmptyState"
@@ -38,6 +39,7 @@ export default function NowScreen() {
 	const currentId = useCurrentId()
 	const item = useItem(currentId)
 	const wide = window.width >= TWO_COLUMNS
+	const typing = useKeyboardState((state) => state.isVisible)
 
 	const header = (
 		<View className="mx-auto w-full max-w-wide flex-row items-center justify-between px-xs py-2xs">
@@ -70,12 +72,17 @@ export default function NowScreen() {
 		)
 	}
 
-	// The artwork gives way on short screens so the panel below keeps room.
+	// The artwork gives way on short screens so the panel below keeps room —
+	// and on a phone, to the keyboard altogether while you type a note.
 	const column = wide ? 26 * 16 : Math.min(window.width, 32 * 16) - 48
 	const artWidth = wide ? column : Math.min(column, window.height * 0.28 * (16 / 9))
 
 	return (
-		<View className="flex-1 bg-background" style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}>
+		<KeyboardAvoidingView
+			behavior="padding"
+			className="flex-1 bg-background"
+			style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
+		>
 			{header}
 			<View className={cn("mx-auto w-full max-w-wide flex-1", wide ? "flex-row gap-2xl px-xl pb-lg" : "")}>
 				{/* Keyed: a new episode starts out listening. */}
@@ -84,15 +91,16 @@ export default function NowScreen() {
 					item={item}
 					itemId={currentId}
 					artWidth={artWidth}
+					showArt={wide || !typing}
 					className={wide ? "w-player" : "mx-auto w-full max-w-player px-lg"}
 				/>
 				<Panels itemId={currentId} item={item} className={wide ? "pt-xs" : "mx-auto mt-sm w-full max-w-page px-sm"} />
 			</View>
-		</View>
+		</KeyboardAvoidingView>
 	)
 }
 
-function Player({ item, itemId, artWidth, className }) {
+function Player({ item, itemId, artWidth, showArt, className }) {
 	const copies = useCopies(itemId)
 	const deviceId = useDeviceId()
 	const serverUrl = useLocal(LOCAL_KEYS.serverUrl)
@@ -104,17 +112,19 @@ function Player({ item, itemId, artWidth, className }) {
 	const source = sourceFor({ copies, deviceId, serverUrl, token })
 	const server = copies[DEVICE_SERVER]
 	const meta = [item.channel, uploadDate(item.uploadDate)].filter(Boolean).join(" · ")
+	const picture = watching && source?.kind === MEDIA_KIND.video
 
 	return (
 		<View className={cn("gap-md", className)}>
 			<View className="items-center">
-				{watching && source?.kind === MEDIA_KIND.video ? (
+				{picture ? (
 					<View style={{ width: artWidth }}>
 						<VideoPane itemId={itemId} url={source.url} />
 					</View>
-				) : (
+				) : null}
+				{!picture && showArt ? (
 					<Artwork uri={item.thumbnail} className="rounded-xl" style={{ width: artWidth, aspectRatio: 16 / 9 }} />
-				)}
+				) : null}
 			</View>
 			<View className="gap-3xs">
 				<Text variant="subheading" numberOfLines={2}>

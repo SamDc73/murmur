@@ -6,20 +6,23 @@ import { cn } from "../ui/cn"
 import { Text } from "../ui/Text"
 import { About } from "./About"
 import { Chapters } from "./Chapters"
+import { Notes } from "./Notes"
 import { Transcript } from "./Transcript"
 
 // Below the player (or beside it, on a desktop): what there is to read
-// about this episode, one tab at a time. Only tabs with something in them
-// appear; none at all, and the whole thing is absent.
+// about this episode, one tab at a time — and your note on it. The others
+// appear only with something in them.
 export function Panels({ itemId, item, className }) {
 	const chapters = useMemo(() => parseChapters(item), [item])
-	const tabs = [chapters.length > 0 && "Chapters", item.transcript && "Transcript", item.description && "About"].filter(
-		Boolean
-	)
+	const tabs = [
+		chapters.length > 0 && "Chapters",
+		item.transcript && "Transcript",
+		item.description && "About",
+		"Notes",
+	].filter(Boolean)
 	const [picked, setPicked] = useState(null)
 	const [following, setFollowing] = useState(true)
 	const tab = tabs.includes(picked) ? picked : tabs[0]
-	if (!tab) return null
 
 	return (
 		<View className={cn("flex-1 gap-2xs", className)}>
@@ -64,6 +67,7 @@ export function Panels({ itemId, item, className }) {
 					/>
 				) : null}
 				{tab === "About" ? <About text={item.description} /> : null}
+				{tab === "Notes" ? <Notes key={itemId} itemId={itemId} /> : null}
 			</View>
 		</View>
 	)

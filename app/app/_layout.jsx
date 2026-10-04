@@ -7,6 +7,7 @@ import { StatusBar } from "expo-status-bar"
 import { useEffect } from "react"
 import { Platform } from "react-native"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
+import { KeyboardProvider } from "react-native-keyboard-controller"
 import { SafeAreaProvider } from "react-native-safe-area-context"
 import { registerDownloadTask } from "../downloads/task"
 import { useShareIntent } from "../lib/share-intent"
@@ -30,17 +31,20 @@ export default function Root() {
 	if (!fontsLoaded) return null
 	return (
 		<GestureHandlerRootView style={{ flex: 1 }}>
-			<SafeAreaProvider>
-				<QueryClientProvider client={queryClient}>
-					<StoreProvider>
-						<Boot />
-						<Shell />
-						{/* Menus and dialogs render here, above everything. */}
-						<PortalHost />
-						<Toaster position="top-center" />
-					</StoreProvider>
-				</QueryClientProvider>
-			</SafeAreaProvider>
+			{/* Where the keyboard is, for the screens that type (a note). */}
+			<KeyboardProvider>
+				<SafeAreaProvider>
+					<QueryClientProvider client={queryClient}>
+						<StoreProvider>
+							<Boot />
+							<Shell />
+							{/* Menus and dialogs render here, above everything. */}
+							<PortalHost />
+							<Toaster position="top-center" />
+						</StoreProvider>
+					</QueryClientProvider>
+				</SafeAreaProvider>
+			</KeyboardProvider>
 		</GestureHandlerRootView>
 	)
 }

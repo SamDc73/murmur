@@ -7,6 +7,7 @@ import Sortable from "react-native-sortables"
 import { useProgress } from "react-native-track-player"
 import { useActions, useCopies, useDeviceId, useItem } from "../store/hooks"
 import { ItemMenu } from "./ItemMenu"
+import { NoteLine } from "./NoteLine"
 import { rowStatus } from "./RowStatus"
 import { Thumb } from "./Thumb"
 import { cn } from "./ui/cn"
@@ -72,6 +73,7 @@ export function QueueRow({ id, current, playsNext, online }) {
 							) : null}
 						</Text>
 					</View>
+					<NoteLine note={row.note} />
 				</View>
 			</Pressable>
 			<ItemMenu

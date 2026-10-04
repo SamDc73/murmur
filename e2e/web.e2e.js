@@ -157,6 +157,8 @@ const idOf = (video) =>
 const queueIds = () => queueOf(peer.store.getTable(TABLES.items)).map(([id]) => id)
 const current = () => setting(peer.store.getValues(), VALUES.currentItemId)
 
+const NOTE = "the first video ever — 19 seconds of elephants"
+
 // ---- the story ------------------------------------------------------------------
 
 describe("connecting", () => {
@@ -312,6 +314,15 @@ describe("listening", () => {
 		await page.setViewportSize({ width: 412, height: 915 })
 	})
 
+	test("a note typed while listening is kept as you go, and reaches every device", async () => {
+		await see(page.getByRole("tab", { name: "Notes" })).click()
+		await see(page.getByLabel("Note")).fill(NOTE)
+		await waitFor(() => peer.item(idOf(ZOO)).note === NOTE, { label: "the note synced" })
+		await see(page.getByRole("tab", { name: "Transcript" })).click()
+		await see(page.getByRole("tab", { name: "Notes" })).click()
+		expect(await page.getByLabel("Note").inputValue()).toBe(NOTE)
+	})
+
 	test("Watch picks up where the audio was; Listen carries on from the picture", async () => {
 		await see(page.getByLabel("More")).click()
 		await see(page.getByRole("menuitem", { name: "Get the video" })).click()
@@ -360,6 +371,8 @@ describe("listening", () => {
 
 describe("History", () => {
 	test("tapping an episode plays it again", async () => {
+		// The note rides along, one line under its episode.
+		await see(page.getByText(NOTE)).waitFor()
 		await row(SNOWBOARD.title).click()
 		await waitFor(() => current() === idOf(SNOWBOARD) && queueIds()[0] === idOf(SNOWBOARD), {
 			label: "snowboard playing",

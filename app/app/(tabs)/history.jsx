@@ -5,6 +5,7 @@ import { memo, useMemo } from "react"
 import { Pressable, SectionList, View } from "react-native"
 import { EmptyState } from "../../components/EmptyState"
 import { ItemMenu } from "../../components/ItemMenu"
+import { NoteLine } from "../../components/NoteLine"
 import { ScreenHeader } from "../../components/ScreenHeader"
 import { Thumb } from "../../components/Thumb"
 import { IconButton } from "../../components/ui/IconButton"
@@ -79,6 +80,7 @@ const HistoryRow = memo(function HistoryRow({ id }) {
 				<Text variant="data" numberOfLines={1}>
 					{[row.channel, at].filter(Boolean).join(" · ")}
 				</Text>
+				<NoteLine note={row.note} />
 			</View>
 			<IconButton
 				as={ListPlus}

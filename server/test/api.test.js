@@ -62,4 +62,16 @@ describe("the API", () => {
 		expect((await call("DELETE", `/queue/${b}`)).status).toBe(404)
 		expect((await call("PATCH", "/queue/nope", { index: 0 })).status).toBe(404)
 	})
+
+	test("PATCH sets a note, which GET returns; an empty one clears it", async () => {
+		const { call } = setup()
+		const [id] = (await call("POST", "/queue", "https://youtu.be/jNQXAC9IVRw")).json.added
+		expect((await call("GET", "/queue")).json[0].note).toBe("")
+		expect((await call("PATCH", `/queue/${id}`, { note: "recommended by a friend" })).json.note).toBe(
+			"recommended by a friend"
+		)
+		expect((await call("GET", "/queue")).json[0].note).toBe("recommended by a friend")
+		await call("PATCH", `/queue/${id}`, { note: "" })
+		expect((await call("GET", "/queue")).json[0].note).toBe("")
+	})
 })

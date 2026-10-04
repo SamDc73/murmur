@@ -86,6 +86,8 @@ export function newItem({ url, videoId, order, addedAt }) {
 		error: "",
 		doneAt: 0,
 		position: 0,
+		// Yours: a plain note on the episode, typed while listening.
+		note: "",
 	}
 }
 

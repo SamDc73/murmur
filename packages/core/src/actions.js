@@ -117,10 +117,15 @@ export function queueActions(store, { newId }) {
 		})
 	}
 
+	/** The episode's note: plain text, replaced whole. */
+	function setNote(id, text) {
+		if (store.hasRow(TABLES.items, id)) store.setCell(TABLES.items, id, "note", String(text))
+	}
+
 	/** Ask the server for this item as video (or back to audio). */
 	function wantKind(id, kind) {
 		store.setCell(TABLES.items, id, "wantKind", kind)
 	}
 
-	return { planAdd, addPlanned, addText, remove, playNext, move, markDone, requeue, retry, wantKind }
+	return { planAdd, addPlanned, addText, remove, playNext, move, markDone, requeue, retry, setNote, wantKind }
 }
