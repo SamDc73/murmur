@@ -117,7 +117,8 @@ export function createPipeline({ store, config, tools, log = console }) {
 		// Short of disk: nothing new starts. If an episode still needs its file,
 		// the downloaded one furthest down below it makes room.
 		const downloads = work.filter((job) => job.kind === "download")
-		if (downloads.length > 0 && tools.freeBytes() < config.keepFree) {
+		const next = downloads[0]
+		if (next && tools.freeBytes() - sizeOf(items[next.id], next.mediaKind) < config.keepFree) {
 			work = work.filter((job) => job.kind !== "download")
 			const nearest = ordered.findIndex(([id]) => id === downloads[0].id)
 			const furthest = ordered.findLast(
@@ -415,6 +416,12 @@ export function createPipeline({ store, config, tools, log = console }) {
 			return { ...running, inflight: [...inflight] }
 		},
 	}
+}
+
+// What a download will take, before it starts, from the episode's length:
+// audio at up to 160 kbps, video at about 2 Mbps.
+function sizeOf(row, kind) {
+	return (Number(row?.duration) || 0) * (kind === "video" ? 250_000 : 20_000)
 }
 
 // The server's copy row stands for a file here, or one on its way (a failed

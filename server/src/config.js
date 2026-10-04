@@ -26,8 +26,8 @@ export const CONFIG = {
 	cookies: process.env.YTDLP_COOKIES ?? join(dataDir, "cookies.txt"),
 	downloadConcurrency: Number(process.env.DOWNLOAD_CONCURRENCY ?? 1),
 	// Every episode downloads as soon as it's added, short of filling the
-	// disk: this much always stays free.
-	keepFree: Number(process.env.KEEP_FREE_MB ?? 500) * 1_000_000,
+	// disk: this much always stays free — room for an image update (~700 MB).
+	keepFree: Number(process.env.KEEP_FREE_MB ?? 1000) * 1_000_000,
 	probeConcurrency: Number(process.env.PROBE_CONCURRENCY ?? 2),
 	deviceName: process.env.SERVER_NAME ?? "Server",
 }

@@ -315,6 +315,31 @@ describe("the disk", () => {
 		await until(() => state("d") === undefined && state("b") === COPY_STATE.ready)
 		pipeline.stop()
 	})
+
+	test("a download starts only if it fits, judged by the episode's length", async () => {
+		const store = createMergeableStore("t")
+		const tools = realTmpTools()
+		tools.freeBytes = () => 100_000_000 // 100 MB free
+		const pipeline = createPipeline({ store, config: { ...config, keepFree: 50_000_000 }, tools, log: quiet })
+		pipeline.start()
+		// An hour of audio is ~72 MB: it doesn't fit above the 50 MB kept free.
+		store.setRow(TABLES.items, "long", {
+			...newItem({ url: "u", videoId: "dQw4w9WgXcQ", order: "a0", addedAt: 1 }),
+			resolvedAt: 1,
+			captionLang: "",
+			duration: 3600,
+		})
+		// Ten minutes (~12 MB) does.
+		store.setRow(TABLES.items, "short", {
+			...newItem({ url: "v", videoId: "dQw4w9WgXcQ", order: "a1", addedAt: 1 }),
+			resolvedAt: 1,
+			captionLang: "",
+			duration: 600,
+		})
+		await new Promise((resolve) => setTimeout(resolve, 300))
+		expect(store.getCell(TABLES.copies, copyId("long", DEVICE_SERVER), "state")).toBeUndefined()
+		pipeline.stop()
+	})
 })
 
 describe("a refused download", () => {
