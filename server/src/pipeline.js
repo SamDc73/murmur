@@ -78,11 +78,12 @@ export function createPipeline({ store, config, tools, log = console }) {
 			const copy = copies[copyId(id, DEVICE_SERVER)]
 			if (!copy) {
 				work.push({ kind: "download", id, mediaKind: wanted })
-			} else if (copy.state === COPY_STATE.ready && row.wantKind && copy.kind !== row.wantKind) {
+			} else if (row.wantKind && copy.kind !== row.wantKind && copy.state !== COPY_STATE.downloading) {
+				// The other kind was asked for — even after the file went to a phone.
 				work.push({ kind: "download", id, mediaKind: wanted })
 			} else if (copy.state === COPY_STATE.evicted && keep) {
 				work.push({ kind: "download", id, mediaKind: wanted })
-			} else if (copy.state === COPY_STATE.ready && !keep && phoneHas(copies, id)) {
+			} else if (copy.state === COPY_STATE.ready && !keep && phoneHas(copies, id, copy.kind)) {
 				work.push({ kind: "evict", id })
 			} else if (copy.state === COPY_STATE.downloading || copy.state === COPY_STATE.pending) {
 				// The server died mid-download: the file is not there, start over.
@@ -225,6 +226,10 @@ export function createPipeline({ store, config, tools, log = console }) {
 		// The item can be removed while yt-dlp runs. From then on every write
 		// is skipped and whatever it leaves on disk is deleted.
 		const removed = () => !store.hasRow(TABLES.items, id)
+		const dropped = () => {
+			removeFiles(id)
+			log.info(`[pipeline] dropped ${id}: removed while downloading`)
+		}
 		removeFiles(id, { keepTranscript: true })
 		store.setRow(TABLES.copies, cid, {
 			...newCopy({ itemId: id, deviceId: DEVICE_SERVER, kind: mediaKind, updatedAt: Date.now() }),
@@ -252,10 +257,7 @@ export function createPipeline({ store, config, tools, log = console }) {
 					})
 				}
 			)
-			if (removed()) {
-				removeFiles(id)
-				return
-			}
+			if (removed()) return dropped()
 			const size = statSync(path).size
 			store.setPartialRow(TABLES.copies, cid, {
 				state: COPY_STATE.ready,
@@ -267,15 +269,10 @@ export function createPipeline({ store, config, tools, log = console }) {
 			})
 			log.info(`[pipeline] ready ${basename(path)} (${size} bytes)`)
 		} catch (error) {
-			if (removed()) {
-				removeFiles(id)
-				return
-			}
-			store.setPartialRow(TABLES.copies, cid, {
-				state: COPY_STATE.error,
-				error: String(error.message ?? error).slice(0, 300),
-				updatedAt: Date.now(),
-			})
+			if (removed()) return dropped()
+			const message = String(error.message ?? error).slice(0, 300)
+			log.warn(`[pipeline] download failed ${row.title || row.url}: ${message}`)
+			store.setPartialRow(TABLES.copies, cid, { state: COPY_STATE.error, error: message, updatedAt: Date.now() })
 		}
 	}
 
@@ -375,9 +372,12 @@ export function createPipeline({ store, config, tools, log = console }) {
 	}
 }
 
-function phoneHas(copies, itemId) {
+// A phone holds this item, in the kind the server has (not a stale audio
+// copy of what is now a video).
+function phoneHas(copies, itemId, kind) {
 	return Object.values(copies).some(
-		(copy) => copy.itemId === itemId && copy.deviceId !== DEVICE_SERVER && copy.state === COPY_STATE.ready
+		(copy) =>
+			copy.itemId === itemId && copy.deviceId !== DEVICE_SERVER && copy.state === COPY_STATE.ready && copy.kind === kind
 	)
 }
 

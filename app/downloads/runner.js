@@ -18,7 +18,11 @@ function extensionOf(uri) {
 	return match ? match[1].toLowerCase() : "m4a"
 }
 
-/** Items this phone should have but does not, in play order. */
+/**
+ * Items this phone should have but does not, in play order. A copy of the
+ * other kind counts as missing: after "Get the video" (or "Audio only") the
+ * phone swaps its file for the server's new one.
+ */
 function pendingDownloads({ store, local }) {
 	const deviceId = local.getValue(LOCAL_KEYS.deviceId)
 	const auto = localSetting(local.getValues(), LOCAL_KEYS.autoDownload)
@@ -28,9 +32,10 @@ function pendingDownloads({ store, local }) {
 		const server = copies[copyId(id, DEVICE_SERVER)]
 		if (!server || server.state !== COPY_STATE.ready) continue
 		const mine = copies[copyId(id, deviceId)]
-		if (mine?.state === COPY_STATE.ready || mine?.state === COPY_STATE.downloading) continue
-		if (mine?.state === COPY_STATE.error) continue
-		if (mine?.state === COPY_STATE.pending || auto) wanted.push({ id, server })
+		const stale = mine?.state === COPY_STATE.ready && mine.kind !== server.kind
+		if (mine?.state === COPY_STATE.downloading || mine?.state === COPY_STATE.error) continue
+		if (mine?.state === COPY_STATE.ready && !stale) continue
+		if (stale || mine?.state === COPY_STATE.pending || auto) wanted.push({ id, server })
 	}
 	return wanted
 }
@@ -76,6 +81,8 @@ async function downloadOne({ store, local }, { id, server }) {
 	const token = local.getValue(LOCAL_KEYS.token)
 	if (!serverUrl) return
 	const cid = copyId(id, deviceId)
+	// Swapping kinds: the old file goes first, and the player streams meanwhile.
+	await deleteLocalFile(store.getCell(TABLES.copies, cid, "uri"))
 	const dir = mediaDirUri()
 	await FileSystem.makeDirectoryAsync(dir, { intermediates: true }).catch(() => undefined)
 	const dest = `${dir}${id}.${extensionOf(server.uri)}`

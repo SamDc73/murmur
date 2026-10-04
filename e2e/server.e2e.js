@@ -362,10 +362,10 @@ describe("devices agree", () => {
 		const [id] = phone.add("https://youtu.be/dQw4w9WgXcQ")
 		await waitFor(() => phone.copy(id).state === COPY_STATE.downloading, { label: "download started" })
 		phone.store.delRow(TABLES.items, id)
-		// Long enough for yt-dlp to finish the file it was writing.
-		await Bun.sleep(12_000)
+		// yt-dlp finishes the file it was writing; then the server drops it.
+		await waitFor(() => server.log.includes(`dropped ${id}`), { timeout: 120_000, label: "download dropped" })
+		await waitFor(() => !phone.store.hasRow(TABLES.copies, `${id}:server`), { label: "copy row gone" })
 		expect(phone.store.hasRow(TABLES.items, id)).toBe(false)
-		expect(phone.store.hasRow(TABLES.copies, `${id}:server`)).toBe(false)
 		expect(filesOf(id)).toEqual([])
 	})
 })

@@ -233,6 +233,41 @@ describe("pipeline", () => {
 		expect(tools.files.size).toBe(0)
 		pipeline.stop()
 	})
+
+	test("keepOnServer off: the video can still be asked for, and a phone's old audio doesn't evict it", async () => {
+		const store = createMergeableStore("t")
+		const pipeline = createPipeline({ store, config, tools: realTmpTools(), log: quiet })
+		pipeline.start()
+		store.setValue(VALUES.keepOnServer, false)
+		store.setRow(TABLES.items, "one", {
+			...newItem({ url: "u", videoId: "dQw4w9WgXcQ", order: "a0", addedAt: 1 }),
+			resolvedAt: 1,
+		})
+		const server = () => store.getRow(TABLES.copies, copyId("one", DEVICE_SERVER))
+		const phoneCopy = (kind) => ({
+			itemId: "one",
+			deviceId: "pixel",
+			kind,
+			state: COPY_STATE.ready,
+			progress: 1,
+			bytes: 3,
+			uri: `file://one.${kind}`,
+			error: "",
+			updatedAt: 1,
+		})
+		await until(() => server().state === COPY_STATE.ready)
+		store.setRow(TABLES.copies, copyId("one", "pixel"), phoneCopy("audio"))
+		await until(() => server().state === COPY_STATE.evicted)
+
+		store.setCell(TABLES.items, "one", "wantKind", "video")
+		await until(() => server().state === COPY_STATE.ready && server().kind === "video")
+		await new Promise((resolve) => setTimeout(resolve, 300))
+		expect(server().state).toBe(COPY_STATE.ready) // the phone only has the audio
+
+		store.setRow(TABLES.copies, copyId("one", "pixel"), phoneCopy("video"))
+		await until(() => server().state === COPY_STATE.evicted)
+		pipeline.stop()
+	})
 })
 
 describe("removal mid-job", () => {

@@ -6,10 +6,13 @@ import { mediaUrl } from "../store/local"
 
 export function sourceFor({ copies, deviceId, serverUrl, token }) {
 	const mine = copies[deviceId]
-	if (mine && mine.state === COPY_STATE.ready && mine.uri) {
+	const server = copies[DEVICE_SERVER]
+	// The phone's own file, unless the server has since got the other kind
+	// (the phone is about to swap): then the server's, which is what was asked for.
+	const swapping = server?.state === COPY_STATE.ready && server.kind !== mine?.kind && serverUrl
+	if (mine && mine.state === COPY_STATE.ready && mine.uri && !swapping) {
 		return { url: mine.uri, kind: mine.kind }
 	}
-	const server = copies[DEVICE_SERVER]
 	if (server && server.state === COPY_STATE.ready && serverUrl) {
 		return { url: mediaUrl(serverUrl, token, server.uri, server.updatedAt), kind: server.kind }
 	}

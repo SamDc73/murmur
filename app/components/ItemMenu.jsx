@@ -39,10 +39,12 @@ function ItemActions({ itemId, where, playsNext }) {
 	const wantsVideo = (item.wantKind || server?.kind) === MEDIA_KIND.video
 	const canDownload = CAN_DOWNLOAD && server?.state === COPY_STATE.ready && where !== "history"
 	const canSwapKind = online && item.resolvedAt && where !== "history"
+	// Its details or the server's download failed: both start over from here.
+	const failed = item.error || server?.state === COPY_STATE.error
 
 	return (
 		<>
-			{item.error ? <MenuItem icon={RefreshCw} label="Try again" onPress={() => actions.retry(itemId)} /> : null}
+			{failed ? <MenuItem icon={RefreshCw} label="Try again" onPress={() => actions.retry(itemId)} /> : null}
 			{where === "history" ? (
 				<>
 					<MenuItem icon={Play} label="Play now" onPress={() => actions.playAgain(itemId)} />
