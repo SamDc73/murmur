@@ -270,6 +270,42 @@ describe("pipeline", () => {
 	})
 })
 
+describe("the download window", () => {
+	test("files only for what's coming up; played or moved down, they go", async () => {
+		const store = createMergeableStore("t")
+		const tools = realTmpTools()
+		const pipeline = createPipeline({ store, config: { ...config, downloadAhead: 2 }, tools, log: quiet })
+		pipeline.start()
+		for (const [id, order] of [
+			["a", "a0"],
+			["b", "a1"],
+			["c", "a2"],
+			["d", "a3"],
+		]) {
+			store.setRow(TABLES.items, id, {
+				...newItem({ url: id, videoId: "dQw4w9WgXcQ", order, addedAt: 1 }),
+				resolvedAt: 1,
+				captionLang: "",
+			})
+		}
+		const state = (id) => store.getCell(TABLES.copies, copyId(id, DEVICE_SERVER), "state")
+		await until(() => state("a") === COPY_STATE.ready && state("b") === COPY_STATE.ready)
+		await new Promise((resolve) => setTimeout(resolve, 200))
+		expect([state("c"), state("d")]).toEqual([undefined, undefined])
+
+		// Played: its file goes, and the next one comes up.
+		store.setCell(TABLES.items, "a", "doneAt", Date.now())
+		await until(() => state("a") === undefined && state("c") === COPY_STATE.ready)
+		expect(tools.files.has("a.m4a")).toBe(false)
+
+		// Moved to the top: it downloads, and what slid out of the window lets go.
+		store.setCell(TABLES.items, "d", "order", "Zz")
+		await until(() => state("d") === COPY_STATE.ready && state("c") === undefined)
+		expect(state("b")).toBe(COPY_STATE.ready)
+		pipeline.stop()
+	})
+})
+
 describe("removal mid-job", () => {
 	test("removing an item while it downloads leaves no ghost row, copy row or file", async () => {
 		const store = createMergeableStore("t")

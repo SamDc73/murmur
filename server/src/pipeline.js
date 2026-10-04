@@ -51,7 +51,9 @@ export function createPipeline({ store, config, tools, log = console }) {
 	}
 
 	// Every item, in play order, current first — so the next thing to play is
-	// always the next thing fetched. History is never downloaded again.
+	// always the next thing fetched. Details and transcripts for all of them;
+	// files only for the few coming up (`downloadAhead`). Anything further down,
+	// or played, lets its file go, and fetches it again if it comes back up.
 	function plan() {
 		const items = store.getTable(TABLES.items)
 		const values = store.getValues()
@@ -60,6 +62,7 @@ export function createPipeline({ store, config, tools, log = console }) {
 		const currentId = setting(values, VALUES.currentItemId)
 		const queue = queueOf(items)
 		const ordered = [...queue.filter(([id]) => id === currentId), ...queue.filter(([id]) => id !== currentId)]
+		const ahead = new Set(ordered.slice(0, config.downloadAhead ?? Number.POSITIVE_INFINITY).map(([id]) => id))
 		const work = []
 
 		for (const [id, row] of ordered) {
@@ -76,7 +79,9 @@ export function createPipeline({ store, config, tools, log = console }) {
 			}
 			const wanted = wantedKind(row, values)
 			const copy = copies[copyId(id, DEVICE_SERVER)]
-			if (!copy) {
+			if (!ahead.has(id)) {
+				if (holdsFile(copy)) work.push({ kind: "drop", id })
+			} else if (!copy) {
 				work.push({ kind: "download", id, mediaKind: wanted })
 			} else if (row.wantKind && copy.kind !== row.wantKind && copy.state !== COPY_STATE.downloading) {
 				// The other kind was asked for — even after the file went to a phone.
@@ -90,10 +95,13 @@ export function createPipeline({ store, config, tools, log = console }) {
 				work.push({ kind: "download", id, mediaKind: copy.kind || wanted })
 			}
 		}
-		// Played before its details arrived (marked as played while fetching):
-		// History still deserves a title. Details only — nothing is downloaded.
 		for (const [id, row] of Object.entries(items)) {
-			if (row.doneAt && !row.resolvedAt && !row.error && !inflight.has(id)) work.push({ kind: "probe", id })
+			if (!row.doneAt || inflight.has(id)) continue
+			// Played before its details arrived (marked as played while fetching):
+			// History still deserves a title. Details only — nothing is downloaded.
+			if (!row.resolvedAt && !row.error) work.push({ kind: "probe", id })
+			// Played: the file goes ("Play again" fetches it back).
+			if (holdsFile(copies[copyId(id, DEVICE_SERVER)])) work.push({ kind: "drop", id })
 		}
 		return work
 	}
@@ -106,6 +114,7 @@ export function createPipeline({ store, config, tools, log = console }) {
 			else if (job.kind === "transcript" && shortJobs < config.probeConcurrency) start(job, transcriptItem)
 			else if (job.kind === "download" && running.download < config.downloadConcurrency) start(job, downloadItem)
 			else if (job.kind === "evict") evictItem(job.id)
+			else if (job.kind === "drop") dropFile(job.id)
 		}
 	}
 
@@ -306,6 +315,14 @@ export function createPipeline({ store, config, tools, log = console }) {
 		log.info(`[pipeline] evicted ${id}: a phone has it and the server keeps nothing`)
 	}
 
+	// Not coming up soon, or played: the file and the server's copy row go
+	// (the transcript stays). An evicted copy is left alone — a phone has it.
+	function dropFile(id) {
+		removeFiles(id, { keepTranscript: true })
+		store.delRow(TABLES.copies, copyId(id, DEVICE_SERVER))
+		log.info(`[pipeline] let go of ${store.getCell(TABLES.items, id, "title") || id}: not coming up soon`)
+	}
+
 	// Replacing or evicting the media keeps the transcript; removing the item does not.
 	function removeFiles(id, { keepTranscript = false } = {}) {
 		for (const name of tools.listFiles()) {
@@ -370,6 +387,12 @@ export function createPipeline({ store, config, tools, log = console }) {
 			return { ...running, inflight: [...inflight] }
 		},
 	}
+}
+
+// The server's copy row stands for a file here, or one on its way (a failed
+// download counts: letting it go means trying afresh when it comes back up).
+function holdsFile(copy) {
+	return copy !== undefined && copy.state !== COPY_STATE.evicted
 }
 
 // A phone holds this item, in the kind the server has (not a stale audio

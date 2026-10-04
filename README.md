@@ -2,10 +2,10 @@
 
 Paste YouTube links — one, a whole list, or a Google Doc full of them — and listen like a podcast queue: top to bottom, then it stops. Self-hosted.
 
-- Your server fetches everything with yt-dlp; the phone and the web app share one queue, live.
+- Your server fetches with yt-dlp, a few episodes ahead (`DOWNLOAD_AHEAD`, 3); the phone and the web app share one queue, live.
 - The phone keeps its own copies, so it plays without the server; downloads go to the server, the phone, or both.
 - Plays in the background with lock-screen, notification and headset controls. Audio by default, video when you want it.
-- Chapters, a synced transcript, the description. History of everything played.
+- Chapters, a synced transcript, the description, and a note of your own on each episode. History of everything played.
 
 ## Run it
 
@@ -35,7 +35,7 @@ With a password set, send it as `Authorization: Bearer <password>`:
 GET    /api/queue        the queue, in order
 GET    /api/history      played, newest first
 POST   /api/queue        any text with YouTube or Google Docs links
-PATCH  /api/queue/:id    {"index": 0} moves it · {"played": true} or false
+PATCH  /api/queue/:id    {"index": 0} moves it · {"played": true} or false · {"note": "…"}
 DELETE /api/queue/:id
 ```
 
