@@ -6,16 +6,21 @@ import X from "lucide-react-native/icons/x"
 import { useRef, useState } from "react"
 import { Linking, StyleSheet, useWindowDimensions, View } from "react-native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { REM } from "../lib/wide"
 import { Button } from "./ui/Button"
 import { IconButton } from "./ui/IconButton"
 import { Text } from "./ui/Text"
 
-const CORNER = 28
+// The square's corner, and the steps around it (tokens.css: lg, sm, 3xl).
+const CORNER = 1.618 * REM
+const SM = 0.618 * REM
+const LG = 1.618 * REM
+const THREE_XL = 6.854 * REM
 const AGAIN_AFTER_MS = 1500
 
 // The camera, full screen, looking for one QR code — the way WhatsApp and
 // Signal do it: everything dimmed but a square in the middle, a close button,
-// a light, one line of help. The square takes most of the short side, so it
+// a light, one line of help. The square takes φ⁻¹ of the short side, so it
 // fits any phone or tablet, either way up. `onCode` says whether the code was
 // right; a wrong one can be followed by the right one a moment later.
 export function Scanner({ onCode, onClose, error }) {
@@ -24,12 +29,12 @@ export function Scanner({ onCode, onClose, error }) {
 	const seen = useRef(false)
 	const { width, height } = useWindowDimensions()
 	const insets = useSafeAreaInsets()
-	const side = Math.min(width, height) * 0.68
+	const side = Math.min(width, height) * 0.618
 	const left = (width - side) / 2
 	const top = (height - side) / 2
 	const reach = Math.max(width, height)
 	// Under the square, but never below the screen (a phone on its side).
-	const below = Math.min(top + side + 24, height - insets.bottom - 96)
+	const below = Math.min(top + side + LG, height - insets.bottom - THREE_XL)
 
 	function scanned({ data }) {
 		if (seen.current) return
@@ -71,7 +76,7 @@ export function Scanner({ onCode, onClose, error }) {
 
 			<View
 				className="absolute right-0 left-0 flex-row items-center justify-between px-sm"
-				style={{ top: insets.top + 8 }}
+				style={{ top: insets.top + SM }}
 			>
 				<IconButton as={X} size="md" label="Close" onPress={onClose} iconClassName="text-on-camera" />
 				{permission?.granted ? (

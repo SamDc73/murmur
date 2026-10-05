@@ -64,9 +64,10 @@ export function Transcript({ itemId, lang, following, onFollowingChange, onSeek 
 
 const keyOf = (cue, index) => `${index}:${cue.s}`
 
+// Set where the first line would start.
 function Note({ text }) {
 	return (
-		<View className="px-sm py-md">
+		<View className="px-sm py-xs">
 			<Text variant="label" className="text-on-surface-variant">
 				{text}
 			</Text>

@@ -9,7 +9,7 @@ export function EmptyState({ title, body }) {
 	const verdigris = useTokenColour("--color-tertiary")
 	return (
 		<View className="items-center gap-sm px-xl py-3xl">
-			<Icon as={MurmurGlyph} accent={verdigris} className="h-mark w-mark text-outline" />
+			<Icon as={MurmurGlyph} accent={verdigris} className="mb-xs h-2xl w-2xl text-outline" />
 			<Text variant="subheading" className="text-center">
 				{title}
 			</Text>

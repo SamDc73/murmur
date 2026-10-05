@@ -15,11 +15,13 @@ import { Panels } from "../components/now/Panels"
 import { Scrubber } from "../components/Scrubber"
 import { Transport } from "../components/Transport"
 import { cn } from "../components/ui/cn"
+import { COLUMN } from "../components/ui/column"
 import { Icon } from "../components/ui/Icon"
 import { IconButton } from "../components/ui/IconButton"
 import { Select } from "../components/ui/Select"
 import { Text } from "../components/ui/Text"
 import { VideoPane } from "../components/VideoPane"
+import { REM } from "../lib/wide"
 import { seekTo } from "../player/controller"
 import { usePlaying } from "../player/picture"
 import { sourceFor } from "../player/source"
@@ -27,8 +29,11 @@ import { useActions, useCopies, useCurrentId, useDeviceId, useItem, useLocal, us
 import { LOCAL_KEYS, streamUrl } from "../store/local"
 
 const RATES = [0.8, 1, 1.25, 1.5, 1.75, 2].map((value) => ({ value, label: `${value}×` }))
-// Two columns from a small laptop up: the player, and what to read beside it.
-const TWO_COLUMNS = 1024
+// Two columns once the player (φ⁷ rem) and a form's width beside it (φ^7.5)
+// fit: the player, and what to read beside it.
+const TWO_COLUMNS = (29.03 + 36.9) * REM
+// The player's column, less its two margins (tokens.css: player, lg).
+const PLAYER = (29.03 - 2 * 1.618) * REM
 
 // One episode, whole: the player on top — and the chapters, transcript and
 // description underneath (on a phone) or beside it (on a desktop).
@@ -41,11 +46,18 @@ export default function NowScreen() {
 	const wide = window.width >= TWO_COLUMNS
 	const typing = useKeyboardState((state) => state.isVisible)
 
+	// The way down and the menu, their glyphs — not their buttons — on the
+	// column's edges: the buttons hang into the margin.
 	const header = (
-		<View className="mx-auto w-full max-w-wide flex-row items-center justify-between px-xs py-2xs">
+		<View
+			className={cn(
+				"mx-auto w-full flex-row items-center justify-between px-sm py-2xs",
+				wide ? "max-w-wide" : "max-w-page"
+			)}
+		>
 			<IconButton
 				as={ChevronDown}
-				size="md"
+				size="sm"
 				label="Close"
 				onPress={() => router.back()}
 				iconClassName="text-on-surface-variant"
@@ -55,10 +67,10 @@ export default function NowScreen() {
 				<ItemMenu
 					itemId={currentId}
 					where="now"
-					trigger={<IconButton as={EllipsisVertical} size="md" label="More" iconClassName="text-on-surface-variant" />}
+					trigger={<IconButton as={EllipsisVertical} size="sm" label="More" iconClassName="text-on-surface-variant" />}
 				/>
 			) : (
-				<View className="h-tap-lg w-tap-lg" />
+				<View className="h-tap w-tap" />
 			)}
 		</View>
 	)
@@ -74,7 +86,7 @@ export default function NowScreen() {
 
 	// The artwork gives way on short screens so the panel below keeps room —
 	// and on a phone, to the keyboard altogether while you type a note.
-	const column = wide ? 26 * 16 : Math.min(window.width, 32 * 16) - 48
+	const column = Math.min(window.width - 2 * 1.618 * REM, PLAYER)
 	const artWidth = wide ? column : Math.min(column, window.height * 0.28 * (16 / 9))
 
 	return (
@@ -84,7 +96,9 @@ export default function NowScreen() {
 			style={{ paddingTop: insets.top, paddingBottom: insets.bottom }}
 		>
 			{header}
-			<View className={cn("mx-auto w-full max-w-wide flex-1", wide ? "flex-row gap-2xl px-xl pb-lg" : "")}>
+			{/* On a desktop, a golden split: the player's column (φ⁷) and the page's
+			    (φ⁸) side by side make the whole (φ⁹), margins and all. */}
+			<View className={cn("mx-auto w-full flex-1", wide && "max-w-wide flex-row pb-lg")}>
 				{/* Keyed: a new episode starts out listening. */}
 				<Player
 					key={currentId}
@@ -92,9 +106,9 @@ export default function NowScreen() {
 					itemId={currentId}
 					artWidth={artWidth}
 					showArt={wide || !typing}
-					className={wide ? "w-player" : "mx-auto w-full max-w-player px-lg"}
+					className={cn("w-full px-lg", wide ? "max-w-player pt-xs" : "mx-auto max-w-player")}
 				/>
-				<Panels itemId={currentId} item={item} className={wide ? "pt-xs" : "mx-auto mt-sm w-full max-w-page px-sm"} />
+				<Panels itemId={currentId} item={item} className={cn(COLUMN, wide ? "flex-1 pt-xs" : "mt-md")} />
 			</View>
 		</KeyboardAvoidingView>
 	)
@@ -129,7 +143,7 @@ function Player({ item, itemId, artWidth, showArt, className }) {
 					</View>
 				) : null}
 				{!picture && showArt ? (
-					<Artwork uri={item.thumbnail} className="rounded-xl" style={{ width: artWidth, aspectRatio: 16 / 9 }} />
+					<Artwork uri={item.thumbnail} className="rounded-md" style={{ width: artWidth, aspectRatio: 16 / 9 }} />
 				) : null}
 			</View>
 			<View className="gap-3xs">
@@ -151,7 +165,7 @@ function Player({ item, itemId, artWidth, showArt, className }) {
 						role="switch"
 						accessibilityState={{ checked: watching }}
 						onPress={() => setWatching((value) => !value)}
-						className="flex-row items-center gap-3xs rounded-md px-xs py-2xs active:bg-surface-container web:hover:bg-surface-container"
+						className="flex-row items-center gap-3xs rounded-xs px-xs py-2xs active:bg-surface-container web:hover:bg-surface-container"
 					>
 						<Icon as={watching ? Music2 : Video} className="h-icon-sm w-icon-sm text-on-surface-variant" />
 						<Text variant="mono" className="text-on-surface">

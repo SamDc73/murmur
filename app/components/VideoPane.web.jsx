@@ -48,7 +48,7 @@ export function VideoPane({ itemId, url, stream }) {
 	}, [itemId, url, stream])
 
 	return (
-		<View className="w-full overflow-hidden rounded-xl bg-surface-container-lowest">
+		<View className="w-full overflow-hidden rounded-md bg-surface-container-lowest">
 			{/* biome-ignore lint/a11y/useMediaCaption: YouTube's captions are the Transcript tab beside it. */}
 			<video
 				ref={element}

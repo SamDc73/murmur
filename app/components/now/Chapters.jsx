@@ -20,13 +20,14 @@ export function Chapters({ chapters, onSeek }) {
 
 const keyOf = (chapter, index) => `${index}:${chapter.start}`
 
-// A time and a line of text; shared with the transcript.
+// A time and a line of text; shared with the transcript. Its wash's corner
+// is its inset over φ (sm → xs).
 export const Line = memo(function Line({ start, text, active, onSeek }) {
 	return (
 		<Pressable
 			onPress={() => onSeek(start)}
 			className={cn(
-				"flex-row items-baseline gap-md rounded-md px-sm py-xs active:bg-surface-container web:hover:bg-surface-container",
+				"flex-row items-baseline gap-md rounded-xs px-sm py-xs active:bg-surface-container web:hover:bg-surface-container",
 				active && "bg-primary-wash web:hover:bg-primary-wash"
 			)}
 		>

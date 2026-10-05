@@ -7,6 +7,8 @@ import { Platform, View } from "react-native"
 import { toast } from "../lib/toast"
 import { useActions } from "../store/hooks"
 import { ConfirmDialog } from "./ui/ConfirmDialog"
+import { cn } from "./ui/cn"
+import { COLUMN } from "./ui/column"
 import { Icon } from "./ui/Icon"
 import { IconButton } from "./ui/IconButton"
 import { Input } from "./ui/Input"
@@ -55,8 +57,10 @@ export function AddBar() {
 
 	const lines = Math.min(Math.max(text.split("\n").length, 1), 4)
 	return (
-		<View className="mx-auto w-full max-w-page gap-2xs px-md pb-sm">
-			<View className="flex-row items-center gap-2xs rounded-lg border border-outline-variant bg-surface-container-lowest pr-3xs pl-sm web:focus-within:border-primary">
+		<View className={cn(COLUMN, "pb-md")}>
+			{/* Its corner (lg) clamps to a pill around the round button inside, set in
+			    by 2xs all round — concentric — and holds once a long paste grows it. */}
+			<View className="flex-row items-center gap-2xs rounded-lg border border-outline-variant bg-surface-container-lowest p-2xs pl-sm web:focus-within:border-primary">
 				<Icon as={Plus} className="h-icon w-icon text-outline" />
 				<Input
 					className="flex-1 border-0 bg-transparent px-0 web:outline-none"

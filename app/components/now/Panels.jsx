@@ -11,7 +11,10 @@ import { Transcript } from "./Transcript"
 
 // Below the player (or beside it, on a desktop): what there is to read
 // about this episode, one tab at a time — and your note on it. The others
-// appear only with something in them.
+// appear only with something in them. The tab labels sit on the column's
+// edge; the bodies reach a step (sm) into the margin and set their words
+// that step in, so the words line up under the labels while a marked line's
+// wash hangs out past them.
 export function Panels({ itemId, item, className }) {
 	const chapters = useMemo(() => parseChapters(item), [item])
 	const tabs = [
@@ -26,7 +29,7 @@ export function Panels({ itemId, item, className }) {
 
 	return (
 		<View className={cn("flex-1 gap-2xs", className)}>
-			<View className="flex-row items-center gap-md border-b border-outline-variant px-sm">
+			<View className="flex-row items-center gap-md border-b border-outline-variant">
 				{tabs.map((name) => (
 					<Pressable
 						key={name}
@@ -60,7 +63,7 @@ export function Panels({ itemId, item, className }) {
 					</Pressable>
 				) : null}
 			</View>
-			<View className="flex-1">
+			<View className="-mx-sm flex-1">
 				{tab === "Chapters" ? <Chapters chapters={chapters} onSeek={seekTo} /> : null}
 				{tab === "Transcript" ? (
 					<Transcript

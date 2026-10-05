@@ -8,10 +8,12 @@ import { IconButton } from "./ui/IconButton"
 import { PlayPauseButton } from "./ui/PlayPauseButton"
 import { Text } from "./ui/Text"
 
-// Five controls, the big one in the middle; the jumps say how far.
+// Five controls, the big one in the middle; the jumps say how far. The row
+// reaches md into each margin, which puts the outer glyphs' strokes — not
+// their buttons — on the column's edges, under the scrubber's ends.
 export function Transport({ playing }) {
 	return (
-		<View className="flex-row items-center justify-between">
+		<View className="-mx-md flex-row items-center justify-between">
 			<IconButton as={SkipBack} size="md" label="Previous" onPress={previous} iconClassName="text-on-surface-variant" />
 			<Jump icon={RotateCcw} seconds={SKIP_BACK_S} label={`Back ${SKIP_BACK_S} seconds`} onPress={skipBack} />
 			<PlayPauseButton size="lg" playing={playing} onPress={toggle} />

@@ -15,7 +15,7 @@ export function PairCode({ serverUrl, token }) {
 	const link = pairLink(serverUrl, token)
 	return (
 		<View className="items-center gap-sm px-md py-md">
-			<View className={dark ? "rounded-lg bg-inverse-surface p-md" : "rounded-lg bg-surface-container-lowest p-md"}>
+			<View className={dark ? "rounded-sm bg-inverse-surface p-md" : "rounded-sm bg-surface-container-lowest p-md"}>
 				<QRCode value={link} size={184} bgColor={paper} fgColor={ink} level="M" />
 			</View>
 			<Text variant="caption" className="text-center text-on-surface-variant">

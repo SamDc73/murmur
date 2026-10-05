@@ -38,9 +38,9 @@ export default function SignInScreen() {
 	}
 
 	return (
-		<View className="flex-1 items-center justify-center bg-background px-md">
+		<View className="flex-1 items-center justify-center bg-background px-lg">
 			<View className="w-full max-w-copy items-center gap-md">
-				<Icon as={MurmurGlyph} accent={verdigris} className="h-mark w-mark text-primary" />
+				<Icon as={MurmurGlyph} accent={verdigris} className="h-2xl w-2xl text-primary" />
 				<Text variant="heading">Murmur</Text>
 				<View className="w-full gap-xs">
 					<Input

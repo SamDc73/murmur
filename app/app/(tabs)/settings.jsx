@@ -8,6 +8,7 @@ import { PairCode } from "../../components/PairCode"
 import { ScanButton } from "../../components/ScanButton"
 import { ScreenHeader } from "../../components/ScreenHeader"
 import { Button } from "../../components/ui/Button"
+import { COLUMN } from "../../components/ui/column"
 import { Group, Row, RowField } from "../../components/ui/Group"
 import { Select } from "../../components/ui/Select"
 import { Text } from "../../components/ui/Text"
@@ -24,13 +25,16 @@ export default function SettingsScreen() {
 	return (
 		<View className="flex-1 bg-background">
 			<ScreenHeader title="Settings" />
-			<ScrollView contentContainerStyle={{ paddingBottom: 32 }} keyboardShouldPersistTaps="handled">
-				<View className="mx-auto w-full max-w-form gap-lg px-md pt-xs">
-					<ServerGroup />
-					<ListeningGroup />
-					<DownloadsGroup />
-					{CAN_DOWNLOAD ? <PhoneGroup /> : null}
-					<AboutGroup />
+			<ScrollView contentContainerClassName="pb-xl" keyboardShouldPersistTaps="handled">
+				{/* The page's column, the groups a form's width on its left edge — under the title. */}
+				<View className={COLUMN}>
+					<View className="w-full max-w-form gap-lg">
+						<ServerGroup />
+						<ListeningGroup />
+						<DownloadsGroup />
+						{CAN_DOWNLOAD ? <PhoneGroup /> : null}
+						<AboutGroup />
+					</View>
 				</View>
 			</ScrollView>
 		</View>

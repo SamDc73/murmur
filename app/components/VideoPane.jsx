@@ -42,7 +42,7 @@ export function VideoPane({ itemId, url, stream }) {
 	}, [player, itemId])
 
 	return (
-		<View className="w-full overflow-hidden rounded-xl bg-surface-container-lowest">
+		<View className="w-full overflow-hidden rounded-md bg-surface-container-lowest">
 			<VideoView
 				player={player}
 				style={{ width: "100%", aspectRatio: 16 / 9 }}

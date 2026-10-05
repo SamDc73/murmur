@@ -26,9 +26,11 @@ export function Rail() {
 	const current = activeName(usePathname())
 	const verdigris = useTokenColour("--color-tertiary")
 	return (
+		// Set lg down, like a screen's title: the mark (icon-xl) is as tall as the
+		// title's line (heading × √φ), so the two share a centre line.
 		<View
-			className="w-rail gap-3xs border-r border-outline-variant bg-surface px-sm pb-md"
-			style={{ paddingTop: insets.top + 20 }}
+			className="w-4xl gap-3xs border-r border-outline-variant bg-surface px-sm pt-lg pb-md"
+			style={{ marginTop: insets.top }}
 		>
 			<View className="flex-row items-center gap-xs px-sm pb-lg">
 				<Icon as={MurmurGlyph} accent={verdigris} className="h-icon-xl w-icon-xl text-primary" />
@@ -51,8 +53,8 @@ function RailItem({ place, active }) {
 			accessibilityState={{ selected: active }}
 			className={
 				active
-					? "flex-row items-center gap-sm rounded-seg bg-primary-wash px-sm py-navitem"
-					: "flex-row items-center gap-sm rounded-seg px-sm py-navitem active:bg-surface-container hover:bg-surface-container"
+					? "flex-row items-center gap-sm rounded-xs bg-primary-wash px-sm py-xs"
+					: "flex-row items-center gap-sm rounded-xs px-sm py-xs active:bg-surface-container hover:bg-surface-container"
 			}
 		>
 			<Icon
@@ -71,7 +73,7 @@ export function Bar({ state }) {
 	const insets = useSafeAreaInsets()
 	const current = state.routes[state.index].name
 	return (
-		<View className="flex-row bg-surface px-2xs pt-2xs" style={{ paddingBottom: Math.max(insets.bottom, 8) }}>
+		<View className="flex-row bg-surface px-2xs pt-xs" style={{ paddingBottom: Math.max(insets.bottom, 10) }}>
 			{PLACES.map((place) => (
 				<BarItem key={place.name} place={place} active={place.name === current} />
 			))}
@@ -87,16 +89,16 @@ function BarItem({ place, active }) {
 			onPress={() => router.navigate(place.href)}
 			accessibilityRole="tab"
 			accessibilityState={{ selected: active }}
-			className="flex-1 items-center gap-3xs rounded-seg py-xs active:bg-surface-container"
+			className="flex-1 items-center gap-2xs rounded-xs py-2xs active:bg-surface-container"
 		>
-			<View className={active ? "rounded-xl bg-primary-wash px-md py-3xs" : "px-md py-3xs"}>
+			<View className={active ? "rounded-full bg-primary-wash px-md py-3xs" : "px-md py-3xs"}>
 				<Icon
 					as={place.glyph}
 					accent={active ? verdigris : undefined}
 					className={active ? "h-icon-lg w-icon-lg text-primary" : "h-icon-lg w-icon-lg text-on-surface-variant"}
 				/>
 			</View>
-			<Text className={active ? "font-body-semibold text-tab text-primary" : "text-tab text-on-surface-variant"}>
+			<Text variant="caption" className={active ? "font-body-semibold text-primary" : "text-on-surface-variant"}>
 				{place.label}
 			</Text>
 		</Pressable>

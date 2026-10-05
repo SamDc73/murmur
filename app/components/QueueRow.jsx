@@ -18,6 +18,11 @@ import { Text } from "./ui/Text"
 // One episode in the queue: grab the handle to move it, tap it to play it,
 // hold it (or ⋮) for everything else. The one playing is tinted, and only it
 // listens to the player's clock.
+//
+// The row spans the column with its margins: the grip and the ⋮ hang in them,
+// so the thumbnail sits on the column's edge — under the screen's title and
+// the add bar — and the tint runs into the margins. A thumbnail's corner (2xs)
+// plus the row's padding (xs) is the row's own corner (sm), where it shows.
 export function QueueRow({ id, current, playsNext, online }) {
 	const row = useItem(id)
 	const copies = useCopies(id)
@@ -31,15 +36,12 @@ export function QueueRow({ id, current, playsNext, online }) {
 	return (
 		<View
 			className={cn(
-				"mx-auto w-full max-w-page flex-row items-center gap-3xs pr-2xs pl-3xs web:hover:bg-surface-container-low",
+				"mx-auto w-full max-w-page flex-row web:rounded-sm web:hover:bg-surface-container-low",
 				current && "bg-primary-wash web:hover:bg-primary-wash"
 			)}
 		>
 			<Sortable.Handle>
-				<View
-					className="h-tap w-handle items-center justify-center web:cursor-grab"
-					accessibilityLabel="Drag to reorder"
-				>
+				<View className="h-full w-lg items-center justify-center web:cursor-grab" accessibilityLabel="Drag to reorder">
 					<Icon as={GripVertical} className="h-icon w-icon text-outline" />
 				</View>
 			</Sortable.Handle>
@@ -48,7 +50,7 @@ export function QueueRow({ id, current, playsNext, online }) {
 				onLongPress={() => menu.current?.open()}
 				delayLongPress={400}
 				accessibilityLabel={row.title || "Queued link"}
-				className="flex-1 flex-row items-center gap-sm rounded-md py-xs pl-3xs active:bg-surface-container"
+				className="flex-1 flex-row items-center gap-md py-xs active:opacity-80"
 			>
 				{current ? (
 					<LiveThumb uri={row.thumbnail} duration={row.duration} />
@@ -81,7 +83,15 @@ export function QueueRow({ id, current, playsNext, online }) {
 				where="queue"
 				playsNext={playsNext}
 				triggerRef={menu}
-				trigger={<IconButton as={EllipsisVertical} size="sm" label="More" iconClassName="text-on-surface-variant" />}
+				trigger={
+					<IconButton
+						as={EllipsisVertical}
+						size="sm"
+						label="More"
+						className="h-full w-lg"
+						iconClassName="text-on-surface-variant"
+					/>
+				}
 			/>
 		</View>
 	)

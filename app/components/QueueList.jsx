@@ -30,11 +30,7 @@ export function QueueList({ queue, empty }) {
 	)
 
 	return (
-		<Animated.ScrollView
-			ref={scrollableRef}
-			contentContainerStyle={{ paddingBottom: 24 }}
-			keyboardShouldPersistTaps="handled"
-		>
+		<Animated.ScrollView ref={scrollableRef} contentContainerClassName="pb-lg" keyboardShouldPersistTaps="handled">
 			{queue.length === 0 ? empty : null}
 			<Sortable.Grid
 				columns={1}

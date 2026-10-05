@@ -4,12 +4,16 @@ import { View } from "react-native"
 import { Slider } from "react-native-awesome-slider"
 import { useSharedValue } from "react-native-reanimated"
 import { useTokenColour } from "../lib/use-token-colour"
+import { REM } from "../lib/wide"
 import { usePosition } from "../player/picture"
 import { Text } from "./ui/Text"
 
 // The one gesture that moves through an episode. The track follows playback
 // until a finger is on it; on release it seeks once. It reads the player's
 // clock itself, so only it redraws four times a second — not the screen.
+// A 2xs track under an md thumb, its ends round.
+const TRACK = 0.236 * REM
+const THUMB = REM
 export function Scrubber({ fallbackDuration = 0, onSeek, children = null }) {
 	const { position, duration: playing } = usePosition(250)
 	const duration = playing || fallbackDuration
@@ -40,9 +44,9 @@ export function Scrubber({ fallbackDuration = 0, onSeek, children = null }) {
 					onSeek(value)
 				}}
 				renderBubble={() => null}
-				thumbWidth={14}
-				sliderHeight={4}
-				containerStyle={{ borderRadius: 2 }}
+				thumbWidth={THUMB}
+				sliderHeight={TRACK}
+				containerStyle={{ borderRadius: TRACK / 2 }}
 				theme={{
 					minimumTrackTintColor: primary,
 					maximumTrackTintColor: track,

@@ -6,6 +6,8 @@ import { useIsPlaying, useProgress } from "react-native-track-player"
 import { SKIP_BACK_S, skipBack, toggle } from "../player/controller"
 import { useCurrentId, useItem } from "../store/hooks"
 import { Artwork } from "./Artwork"
+import { cn } from "./ui/cn"
+import { COLUMN } from "./ui/column"
 import { IconButton } from "./ui/IconButton"
 import { PlayPauseButton } from "./ui/PlayPauseButton"
 import { ProgressLine } from "./ui/ProgressLine"
@@ -29,8 +31,8 @@ export function MiniPlayer() {
 			className="bg-surface-container-low active:bg-surface-container web:hover:bg-surface-container"
 		>
 			<ProgressLine fraction={total > 0 ? position / total : 0} className="rounded-none" />
-			<View className="mx-auto w-full max-w-page flex-row items-center gap-sm px-md py-xs">
-				<Artwork uri={item.thumbnail} className="h-art w-art rounded-sm" />
+			<View className={cn(COLUMN, "flex-row items-center gap-sm py-xs")}>
+				<Artwork uri={item.thumbnail} className="h-art w-art rounded-2xs" />
 				<View className="flex-1 gap-3xs">
 					<Text variant="line" numberOfLines={1} className="font-body-medium">
 						{item.title || "Fetching details…"}
