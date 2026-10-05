@@ -33,7 +33,10 @@ export function Panels({ itemId, item, className }) {
 						role="tab"
 						accessibilityState={{ selected: name === tab }}
 						onPress={() => setPicked(name)}
-						className={cn("-mb-px border-b-2 py-xs", name === tab ? "border-primary" : "border-transparent")}
+						className={cn(
+							"-mb-px flex-row items-end gap-3xs border-b-2 py-xs",
+							name === tab ? "border-primary" : "border-transparent"
+						)}
 					>
 						<Text
 							variant="label"
@@ -41,6 +44,8 @@ export function Panels({ itemId, item, className }) {
 						>
 							{name}
 						</Text>
+						{/* A note's there: the logo's ball, resting after the word. */}
+						{name === "Notes" && item.note ? <View className="mb-3xs h-xs w-xs rounded-full bg-tertiary" /> : null}
 					</Pressable>
 				))}
 				<View className="flex-1" />

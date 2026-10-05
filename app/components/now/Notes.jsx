@@ -5,8 +5,9 @@ import { Textarea } from "../ui/Textarea"
 
 const SAVE_AFTER_MS = 600
 
-// A note on the episode, for yourself: plain text, typed while it plays. It
-// is kept a moment after you stop typing (and at once when you leave the
+// A note on the episode, for yourself: plain text, typed while it plays —
+// written straight on the page, set like the About text beside it, no box.
+// It is kept a moment after you stop typing (and at once when you leave the
 // field), and syncs like everything else. Keyed by episode where it's used,
 // so a new episode starts a new note.
 export function Notes({ itemId }) {
@@ -30,9 +31,10 @@ export function Notes({ itemId }) {
 				save.flush()
 				setDraft(null)
 			}}
-			placeholder="A note for yourself…"
+			variant="page"
+			placeholder="Write as you listen…"
 			accessibilityLabel="Note"
-			className="m-sm flex-1 border-tertiary-line bg-tertiary-wash"
+			className="flex-1"
 		/>
 	)
 }
