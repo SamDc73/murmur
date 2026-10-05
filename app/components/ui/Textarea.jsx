@@ -12,7 +12,7 @@ import { cn } from "./cn"
 const textarea = cva("font-body text-on-surface web:outline-none web:resize-none", {
 	variants: {
 		variant: {
-			field: "rounded-seg border border-outline-variant bg-surface px-sm py-xs text-body web:focus:border-primary",
+			field: "rounded-xs border border-outline-variant bg-surface px-sm py-xs text-body web:focus:border-primary",
 			page: "bg-transparent px-sm py-xs text-line leading-relaxed",
 		},
 	},

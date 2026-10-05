@@ -13,9 +13,10 @@ export function ConfirmDialog({ open, onOpenChange, title, body, actions }) {
 			<AlertDialog.Portal>
 				<AlertDialog.Overlay
 					style={OVERLAY}
-					className="absolute inset-0 z-50 items-center justify-center bg-veil p-md web:fixed"
+					className="absolute inset-0 z-50 items-center justify-center bg-veil p-lg web:fixed"
 				>
-					<AlertDialog.Content className="w-full max-w-dialog gap-md rounded-xl bg-surface-container-high p-lg shadow-panel">
+					{/* Its corner is its padding ÷ φ (lg → md); the pills inside are round anyway. */}
+					<AlertDialog.Content className="w-full max-w-dialog gap-lg rounded-md bg-surface-container-high p-lg shadow-panel">
 						<View className="gap-xs">
 							<AlertDialog.Title asChild>
 								<Text variant="subheading">{title}</Text>

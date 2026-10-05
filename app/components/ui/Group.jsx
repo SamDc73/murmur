@@ -7,18 +7,20 @@ import { Text } from "./Text"
 
 // The settings grammar, as Android and iOS draw it: a small heading, a
 // rounded group of rows with hairlines between them, an optional footnote.
-// A row is a label on the left and its value or control on the right.
+// A row is a label on the left and its value or control on the right. Rows
+// are set md in from the group's edge, so its corner is md ÷ φ: sm. The
+// heading and the footnote start where the rows' text does.
 
 export function Group({ title, footer, children }) {
 	const rows = Children.toArray(children)
 	return (
 		<View className="gap-xs">
 			{title ? (
-				<Text variant="eyebrow" className="px-sm">
+				<Text variant="eyebrow" className="px-md">
 					{title}
 				</Text>
 			) : null}
-			<View className="overflow-hidden rounded-xl bg-surface-container-low">
+			<View className="overflow-hidden rounded-sm bg-surface-container-low">
 				{rows.map((row, index) => (
 					<View key={row.key} className={index > 0 ? "border-t border-outline-variant" : undefined}>
 						{row}
@@ -26,7 +28,7 @@ export function Group({ title, footer, children }) {
 				))}
 			</View>
 			{footer ? (
-				<Text variant="caption" className="px-sm text-on-surface-variant">
+				<Text variant="caption" className="px-md text-on-surface-variant">
 					{footer}
 				</Text>
 			) : null}

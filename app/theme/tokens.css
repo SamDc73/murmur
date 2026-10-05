@@ -19,37 +19,57 @@
    ───────────────────────────────────────────────────────────────────────── */
 
 @theme {
-	/* Golden-ratio spacing — p-md, gap-lg, m-xl … */
-	--spacing-3xs: 0.146rem;
-	--spacing-2xs: 0.236rem;
-	--spacing-xs: 0.382rem;
-	--spacing-sm: 0.618rem;
-	--spacing-md: 1rem;
-	--spacing-lg: 1.618rem;
-	--spacing-xl: 2.618rem;
-	--spacing-2xl: 4.236rem;
-	--spacing-3xl: 6.854rem;
-	--spacing-4xl: 11.09rem;
+	/* ── The ratio ───────────────────────────────────────────────────────────
+	   Every dimension below is 1rem times a power of φ (1.618): whole steps
+	   for spacing, and quarter or eighth steps — √φ 1.272, ⁴√φ 1.128, ⁸√φ
+	   1.062 — where type and components need finer grain. Any two sizes on a
+	   screen then stand in a ratio the eye already knows, so they rhyme.
+	   What follows from it, everywhere:
+	   · Nesting steps down at least one whole step per level: a page's gaps
+	     are larger than a group's, a group's than a row's.
+	   · Corners follow padding: a container's radius is its padding ÷ φ. And
+	     as φ⁻¹ − φ⁻³ = φ⁻², corners of step k around padding of step k−2
+	     hold children with corners of step k−1 — the curves run parallel
+	     (sm around 2xs → xs, md around xs → sm).
+	   · An icon button is its glyph × φ^1.5, at every size.
+	   · Line height √φ for anything set in a line or two; φ for reading.
+	   ─────────────────────────────────────────────────────────────────────── */
 
-	/* Type scale (φ and √φ steps) */
-	--text-caption: 0.618rem;
-	--text-label: 0.786rem;
-	--text-body: 1rem;
-	--text-callout: 1.128rem;
-	--text-subheading: 1.272rem;
-	--text-heading: 1.618rem;
-	--text-title3: 2.058rem;
-	--text-title2: 2.618rem;
-	--text-title1: 3.33rem;
-	--text-display2: 4.236rem;
-	--text-display1: 6.854rem;
+	/* Spacing: whole steps (px at a 16px root). */
+	--spacing-3xs: 0.146rem; /* 2.3 */
+	--spacing-2xs: 0.236rem; /* 3.8 */
+	--spacing-xs: 0.382rem; /* 6.1 */
+	--spacing-sm: 0.618rem; /* 9.9 */
+	--spacing-md: 1rem; /* 16 */
+	--spacing-lg: 1.618rem; /* 25.9 */
+	--spacing-xl: 2.618rem; /* 41.9 */
+	--spacing-2xl: 4.236rem; /* 67.8 */
+	--spacing-3xl: 6.854rem; /* 109.7 */
+	--spacing-4xl: 11.09rem; /* 177.4 */
 
-	/* Radius */
-	--radius-xs: 0.236rem;
-	--radius-sm: 0.382rem;
-	--radius-md: 0.618rem;
-	--radius-lg: 1rem;
-	--radius-xl: 1.618rem;
+	/* Corners: the same steps, so `rounded-sm` around `p-2xs` holds `rounded-xs`. */
+	--radius-3xs: 0.146rem;
+	--radius-2xs: 0.236rem;
+	--radius-xs: 0.382rem;
+	--radius-sm: 0.618rem;
+	--radius-md: 1rem;
+	--radius-lg: 1.618rem;
+	--radius-xl: 2.618rem;
+
+	/* Type: eighth steps, each with its line height. */
+	--text-chip: 0.697rem; /* φ^-¾ 11.2 — a thumbnail's length, section labels (all caps run a step small) */
+	--text-caption: 0.786rem; /* φ^-½ 12.6 — times, channels, values, tab labels */
+	--text-label: 0.835rem; /* φ^-⅜ 13.4 — buttons, notices */
+	--text-line: 0.942rem; /* φ^-⅛ 15.1 — list titles, menus, reading */
+	--text-body: 1rem; /* 16 — fields */
+	--text-subheading: 1.272rem; /* φ^½ 20.4 */
+	--text-heading: 1.618rem; /* φ 25.9 */
+	--leading-tight: 1.272;
+	--leading-relaxed: 1.618;
+	/* Large type closes up a little; all caps open up by φ⁻¹ of a tenth. */
+	--tracking-heading: -0.02em;
+	--tracking-subheading: -0.017em;
+	--tracking-eyebrow: 0.0618em;
 
 	/* Type — the template's three faces. The names are the families expo-font
 	   registers (see app/_layout.jsx), so one token works on native and web. */
@@ -60,49 +80,29 @@
 	--font-body-semibold: InstrumentSans_600SemiBold;
 	--font-mono: IBMPlexMono_500Medium;
 	--font-mono-regular: IBMPlexMono_400Regular;
-	--text-eyebrow: 0.66rem;
-	--text-chip: 0.68rem;
-	--text-time: 0.75rem;
-	--text-line: 0.93rem;
-	--tracking-eyebrow: 0.14em;
-	--tracking-chip: 0.11em;
 
-	/* Shapes the template uses */
-	--radius-chip: 0.25rem;
-	--radius-seg: 0.4rem;
-	--radius-panel: 0.7rem;
+	/* Icons, and the round buttons holding them (glyph × φ^1.5). */
+	--spacing-icon-sm: 1rem; /* 16 — beside caption text: its line */
+	--spacing-icon: 1.272rem; /* 20.4 — beside list text: its line */
+	--spacing-icon-lg: 1.618rem; /* 25.9 */
+	--spacing-icon-xl: 2.058rem; /* 32.9 */
+	--spacing-tap: 2.618rem; /* 41.9 = icon × φ^1.5; hit slop makes it 48 */
+	--spacing-tap-lg: 3.33rem; /* 53.3 = icon-lg × φ^1.5 */
+	--spacing-play: 4.236rem; /* 67.8 = icon-xl × φ^1.5 */
 
-	/* The rail and the bar, as the palette page draws them */
-	--spacing-rail: 11.5rem;
-	--spacing-navitem: 0.42rem;
-	--spacing-icon: 1.15rem;
-	--text-tab: 0.64rem;
+	/* A row's thumbnail: φ^3.5 wide at 16:9; the mini player's art matches its height. */
+	--spacing-thumb: 5.388rem; /* 86.2 */
+	--spacing-thumb-h: 3.031rem; /* 48.5 */
+	--spacing-art: 3.031rem;
 
-	/* The queue row's thumbnail (16:9), the mini player's artwork, tap targets, icon sizes */
-	--spacing-thumb: 5.5rem;
-	--spacing-thumb-h: 3.1rem;
-	--spacing-art: 3rem;
-	--spacing-tap: 2.75rem;
-	--spacing-tap-lg: 3.5rem;
-	--spacing-play: 4.5rem;
-	--spacing-icon-sm: 0.85rem;
-	--spacing-icon-lg: 1.6rem;
-	--spacing-icon-xl: 2.2rem;
-	/* The mark, large: an empty screen's one picture. */
-	--spacing-mark: 4.236rem;
-	--spacing-handle: 2rem;
-	--spacing-menu: 13rem;
-	--spacing-dialog: 24rem;
-	--spacing-player: 26rem;
-
-	/* Reading width on wide screens — a queue never runs the full width of a monitor. */
-	--container-page: 52rem;
-	/* A settings form, and Now Playing's two columns on a desktop. */
-	--container-form: 40rem;
-	--container-wide: 76rem;
-	--container-copy: 19rem;
-	/* Past this width the rail replaces the bottom bar and gutters widen — the template's 46rem. */
-	--breakpoint-wide: 46rem;
+	/* Columns, on half steps: copy φ⁶, a dialog φ^6.5, the player φ⁷, a form
+	   φ^7.5, a page φ⁸, Now Playing's two columns φ⁹ — φ⁷ + φ⁸, a golden split. */
+	--container-copy: 17.94rem; /* 287 */
+	--container-dialog: 22.84rem; /* 365 */
+	--container-player: 29.03rem; /* 464 */
+	--container-form: 36.9rem; /* 590 */
+	--container-page: 46.98rem; /* 752 */
+	--container-wide: 76.01rem; /* 1216 */
 	--shadow-panel: 0 1px 2px rgb(25 32 40 / 0.05), 0 10px 30px -18px rgb(0 108 180 / 0.28);
 
 	/* Washes and hairlines — the template's translucent tints, pre-composited on

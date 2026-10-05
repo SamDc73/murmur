@@ -16,6 +16,9 @@ export function Toggle({ value, onChange, label }) {
 			trackColor={{ false: track, true: primary }}
 			thumbColor={value ? thumbOn : thumbOff}
 			ios_backgroundColor={track}
+			// react-native-web takes the "on" colours as their own props, and is teal without them.
+			activeThumbColor={thumbOn}
+			activeTrackColor={primary}
 		/>
 	)
 }

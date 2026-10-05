@@ -28,7 +28,9 @@ export function PlayPauseButton({ playing, size, disabled, className, onPress })
 		>
 			<Icon
 				as={playing ? Pause : Play}
-				className={cn(glyph({ size }), !playing && "translate-x-px")}
+				// A triangle's weight sits left of its box's middle: nudged right by
+				// ~6% of the glyph — a pixel or so, two at the big size.
+				className={cn(glyph({ size }), !playing && (size === "lg" ? "translate-x-3xs" : "translate-x-px"))}
 				fill="currentColor"
 				strokeWidth={1.5}
 			/>

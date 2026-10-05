@@ -16,7 +16,7 @@ export function Input({ className, ...props }) {
 	return (
 		<TextInput
 			className={cn(
-				"rounded-seg border border-outline-variant bg-surface px-sm py-xs font-body text-body text-on-surface web:outline-none web:focus:border-primary",
+				"rounded-xs border border-outline-variant bg-surface px-sm py-xs font-body text-body leading-tight text-on-surface web:outline-none web:focus:border-primary",
 				props.editable === false ? "opacity-50" : null,
 				className
 			)}

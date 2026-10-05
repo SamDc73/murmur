@@ -6,7 +6,8 @@ import { Text } from "./Text"
 
 // A dropdown of actions: a trigger, then a short list — icon and label, a
 // line between groups, the destructive one last and red. Nothing else: the
-// menu never repeats what the row it belongs to already shows.
+// menu never repeats what the row it belongs to already shows. Its corner
+// (sm) around its padding (2xs) leaves the items' corners xs — parallel curves.
 //   <Menu trigger={<IconButton … />}>
 //     <MenuItem icon={ListStart} label="Play next" onPress={…} />
 //     <MenuSeparator />
@@ -31,10 +32,10 @@ export function MenuContent({ children, className }) {
 			<DropdownMenu.Overlay style={OVERLAY}>
 				<DropdownMenu.Content
 					align="end"
-					sideOffset={6}
+					sideOffset={6} // xs
 					insets={INSETS}
 					className={cn(
-						"min-w-menu overflow-hidden rounded-lg border border-outline-variant bg-surface-container-high p-2xs shadow-panel",
+						"min-w-4xl overflow-hidden rounded-sm border border-outline-variant bg-surface-container-high p-2xs shadow-panel",
 						className
 					)}
 				>
@@ -51,7 +52,7 @@ export function MenuItem({ icon, label, destructive = false, disabled = false, o
 			disabled={disabled}
 			onPress={onPress}
 			className={cn(
-				"flex-row items-center gap-sm rounded-md px-sm py-xs active:bg-surface-container-highest web:outline-none web:hover:bg-surface-container-highest web:focus:bg-surface-container-highest",
+				"flex-row items-center gap-sm rounded-xs px-sm py-sm active:bg-surface-container-highest web:outline-none web:hover:bg-surface-container-highest web:focus:bg-surface-container-highest",
 				disabled && "opacity-40"
 			)}
 		>
@@ -75,7 +76,7 @@ export function MenuRadioItem({ value, label, checked = false }) {
 	return (
 		<DropdownMenu.RadioItem
 			value={value}
-			className="rounded-md px-md py-xs active:bg-surface-container-highest web:outline-none web:hover:bg-surface-container-highest web:focus:bg-surface-container-highest"
+			className="rounded-xs px-md py-sm active:bg-surface-container-highest web:outline-none web:hover:bg-surface-container-highest web:focus:bg-surface-container-highest"
 		>
 			<Text variant="line" className={checked ? "font-body-medium text-primary" : undefined}>
 				{label}
@@ -87,4 +88,5 @@ export function MenuRadioItem({ value, label, checked = false }) {
 // On a phone the overlay catches the tap outside that closes the menu; on
 // the web Radix does that itself.
 const OVERLAY = Platform.select({ web: undefined, default: StyleSheet.absoluteFill })
-const INSETS = { top: 12, bottom: 12, left: 12, right: 12 }
+// Never closer than md to the screen's edge.
+const INSETS = { top: 16, bottom: 16, left: 16, right: 16 }

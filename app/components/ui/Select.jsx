@@ -15,7 +15,7 @@ export function Select({ value, options, onChange, label }) {
 				<Pressable
 					role="button"
 					accessibilityLabel={`${label}: ${current.label}`}
-					className="flex-row items-center gap-3xs self-start rounded-md px-xs py-2xs active:bg-surface-container web:hover:bg-surface-container"
+					className="flex-row items-center gap-3xs self-start rounded-xs px-xs py-2xs active:bg-surface-container web:hover:bg-surface-container"
 				>
 					<Text variant="mono" className="text-on-surface">
 						{current.label}
