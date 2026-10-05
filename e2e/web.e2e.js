@@ -67,6 +67,9 @@ async function open() {
 	const tab = await context.newPage()
 	tab.on("pageerror", (error) => problems.push(`pageerror: ${error.message}`))
 	tab.on("console", (message) => {
+		// Pausing right after Play: the browser drops the pending start, and the
+		// track player logs it. What a quick double-tap does — not an error.
+		if (/play\(\) request was interrupted by a call to pause\(\)/.test(message.text())) return
 		if (message.type() === "error") problems.push(`console: ${message.text()}`)
 		// Dev builds only (APP_URL=Metro): React Native Web's deprecation warnings.
 		if (message.type() === "warning" && /deprecated/i.test(message.text())) problems.push(`warning: ${message.text()}`)
