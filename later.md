@@ -4,7 +4,7 @@ Things deliberately left out of the first cut, roughly in the order they were as
 
 ## Sources
 - **Spotify links.** Paste a Spotify episode/show URL. No download path exists that respects their terms; the honest version is "open in Spotify" plus queue bookkeeping, or matching the episode to a YouTube upload.
-- **Subscriptions.** Follow a YouTube channel or playlist: the server polls the channel RSS (`https://www.youtube.com/feeds/videos.xml?channel_id=…`) or `yt-dlp --flat-playlist` on a cron, and queues new uploads.
+- **Subscriptions: the app.** The server follows YouTube channels (`POST /api/subscriptions`) and queues new uploads every 30 minutes. Still missing: buttons to follow and unfollow in the apps, and a view of what's followed. Podcast RSS is not started.
 - **Rules.** A cron on the server with filters — channel, title regex, minimum length, playlist — that decide what gets queued and where it lands (top / end). This is the "real uplevel stuff": one rules table, one scheduler, one dry-run view.
 - **Other sites.** yt-dlp handles hundreds; the phone-side link parser only recognises YouTube. Widen `parseYouTubeUrl` into `parseLink` with a generic fallback.
 - **Local files / RSS podcasts.** Real podcast feeds (enclosures) — the same pipeline without yt-dlp.

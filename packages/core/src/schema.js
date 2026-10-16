@@ -13,6 +13,10 @@ export const TABLES = {
 	copies: "copies",
 	// Every device that has ever synced, so a copy can be named ("on Pixel 9").
 	devices: "devices",
+	// One row per YouTube channel followed. The server checks it and queues
+	// new uploads (subscriptions.js); `seen` is the JSON list of video ids it
+	// has already dealt with, so each upload is queued once.
+	subscriptions: "subscriptions",
 }
 
 export const DEVICE_SERVER = "server"

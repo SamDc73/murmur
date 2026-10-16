@@ -37,6 +37,9 @@ GET    /api/history      played, newest first
 POST   /api/queue        any text with YouTube or Google Docs links
 PATCH  /api/queue/:id    {"index": 0} moves it · {"played": true} or false · {"note": "…"}
 DELETE /api/queue/:id
+GET    /api/subscriptions      the YouTube channels followed
+POST   /api/subscriptions      a channel link; its new uploads join the end of the queue
+DELETE /api/subscriptions/:id
 ```
 
 `curl -H "Authorization: Bearer $PASSWORD" -d "https://youtu.be/jNQXAC9IVRw" http://<server>/api/queue`

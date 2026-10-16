@@ -106,6 +106,27 @@ export async function probe(config, url, { playlist = false } = {}) {
 	return JSON.parse(stdout)
 }
 
+// How many of a channel's newest uploads one check looks at. Far more than
+// a channel posts between two checks.
+const CHANNEL_WINDOW = 30
+
+/**
+ * A channel's newest uploads, from its /videos page: `{ channelId, title, ids }`,
+ * ids newest first. Flat, so nothing downloads and each video is one call less.
+ */
+export async function listChannel(config, url) {
+	const args = [...baseArgs(config), "-J", "--flat-playlist", "--playlist-items", `1:${CHANNEL_WINDOW}`, url]
+	const { stdout } = await run(config, args)
+	const info = JSON.parse(stdout)
+	const channelId = String(info.channel_id ?? "")
+	if (channelId === "") throw new Error("No channel at that link")
+	return {
+		channelId,
+		title: String(info.channel ?? info.uploader ?? info.title ?? ""),
+		ids: (info.entries ?? []).map((entry) => String(entry.id ?? "")).filter((id) => id !== ""),
+	}
+}
+
 /** The address of YouTube's HLS master playlist for a video, or "" if it has none. */
 export async function hlsManifest(config, url) {
 	const info = await probe(config, url)
