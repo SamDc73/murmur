@@ -9,10 +9,13 @@ import { Hono } from "hono"
 //   PATCH  /api/queue/:id    {"index": 0} moves it · {"played": true} to History, false back
 //                            · {"note": "…"} replaces its note
 //   DELETE /api/queue/:id    gone everywhere, files too
+//   GET    /api/subscriptions          the YouTube channels followed
+//   POST   /api/subscriptions          a channel link · its new uploads join the queue
+//   DELETE /api/subscriptions/:id      stop following
 //
 // Every change goes through the same functions as the apps' buttons, and
 // reaches every device at once.
-export function api(store, actions) {
+export function api(store, actions, subscriptions) {
 	const app = new Hono()
 	const items = () => store.getTable(TABLES.items)
 	const find = (c) => {
@@ -63,6 +66,21 @@ export function api(store, actions) {
 		const id = find(c)
 		if (id === null) return c.json({ error: "No such episode" }, 404)
 		actions.remove(id)
+		return c.body(null, 204)
+	})
+
+	app.get("/subscriptions", (c) => c.json(subscriptions.list()))
+
+	app.post("/subscriptions", async (c) => {
+		try {
+			return c.json(await subscriptions.subscribe(await c.req.text()), 201)
+		} catch (error) {
+			return c.json({ error: error.message }, 400)
+		}
+	})
+
+	app.delete("/subscriptions/:id", (c) => {
+		if (!subscriptions.unsubscribe(c.req.param("id"))) return c.json({ error: "No such channel" }, 404)
 		return c.body(null, 204)
 	})
 

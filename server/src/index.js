@@ -15,6 +15,7 @@ import { CONFIG } from "./config.js"
 import { createPipeline, realTools } from "./pipeline.js"
 import { openStore } from "./store.js"
 import { stream } from "./stream.js"
+import { createSubscriptions } from "./subscriptions.js"
 import * as ytdlp from "./ytdlp.js"
 
 // On one port:
@@ -53,9 +54,11 @@ app.use("/api/*", async (c, next) => {
 app.get("/api/health", (c) => c.json({ ok: true, locked: CONFIG.token !== "" }))
 
 const { store } = await openStore(CONFIG)
-app.route("/api", api(store, queueActions(store, { newId: uuidv7 })))
+const actions = queueActions(store, { newId: uuidv7 })
 // Watching right away: YouTube's stream, relayed (see stream.js).
 const tools = realTools(CONFIG, ytdlp)
+const subscriptions = createSubscriptions({ store, actions, tools, newId: uuidv7 })
+app.route("/api", api(store, actions, subscriptions))
 app.route("/api/stream", stream(store, { manifestOf: tools.hlsManifest }))
 // The downloaded files — audio, video, transcripts — straight from DATA_DIR/media:
 // /api/media/<itemId>.m4a, /api/media/<itemId>.transcript.json. serveStatic
@@ -130,6 +133,7 @@ await connectSelf()
 
 pipeline = createPipeline({ store, config: CONFIG, tools })
 pipeline.start()
+subscriptions.start()
 
 if (CONFIG.token === "") console.warn("[murmur] MURMUR_PASSWORD is empty: anyone who can reach this port can use it")
 
