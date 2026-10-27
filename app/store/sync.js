@@ -3,14 +3,17 @@ import { useEffect, useSyncExternalStore } from "react"
 import { AppState, Platform } from "react-native"
 import { createWsSynchronizer } from "tinybase/synchronizers/synchronizer-ws-client"
 import { useStore, useValue } from "tinybase/ui-react"
+import { isPlaying, subscribePlaying } from "../player/controller"
 import { LOCAL, LOCAL_KEYS, wsUrl } from "./local"
 
 // Sync is one WebSocket to the server's hub, open while the app is on screen.
 // Entering a server URL turns it on; clearing it turns it off. On a phone it
-// closes when the app goes to the background — Android cuts background
-// network anyway, and an idle socket costs battery — and reopens on return;
-// playback carries on from the local store meanwhile. Its state lives in the
-// local store so any screen can show it.
+// closes when the app goes to the background — an idle socket costs battery —
+// except while audio is playing: the media foreground service keeps network
+// alive, and staying connected lets a background resume pick up where another
+// device left off (and report its own progress) instead of overwriting it with
+// a stale place. It reopens on return. Its state lives in the local store so
+// any screen can show it.
 
 const BACKOFF_MS = [1000, 2000, 5000, 10000, 30000]
 const KNOCK_MS = 5000
@@ -22,15 +25,19 @@ export function useSync() {
 	const serverUrl = useValue(LOCAL_KEYS.serverUrl, LOCAL) ?? ""
 	const token = useValue(LOCAL_KEYS.token, LOCAL) ?? ""
 	const awake = useSyncExternalStore(onAppStateChange, isAwake)
+	const playing = useSyncExternalStore(subscribePlaying, isPlaying)
+	// One gate, so moving between foreground and background while playing keeps
+	// the same socket instead of tearing it down and opening another.
+	const connect = Boolean(serverUrl) && (awake || playing)
 
 	useEffect(() => {
 		if (!serverUrl) {
 			local.setValue(LOCAL_KEYS.syncState, "off")
 			return
 		}
-		if (!awake) return
+		if (!connect) return
 		return keepConnected({ store, local, serverUrl, token })
-	}, [store, local, serverUrl, token, awake])
+	}, [store, local, serverUrl, token, connect])
 }
 
 function onAppStateChange(callback) {
@@ -38,7 +45,8 @@ function onAppStateChange(callback) {
 	return () => subscription.remove()
 }
 
-// A browser tab stays connected; a phone app only while it is not in the background.
+// A browser tab stays connected; a phone app only while it is not in the
+// background (playing in the background keeps it connected too — see useSync).
 const isAwake = () => Platform.OS === "web" || AppState.currentState !== "background"
 
 /**
