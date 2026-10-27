@@ -3,9 +3,11 @@ import {
 	introEnd,
 	nextUp,
 	parseChapters,
+	parseSponsorSegments,
 	previousOf,
 	queueOf,
 	setting,
+	sponsorEnd,
 	TABLES,
 	VALUES,
 } from "@murmur/core"
@@ -22,6 +24,8 @@ import { sourceFor } from "./source"
 // handful of functions at the bottom; they never call TrackPlayer themselves.
 
 const PROGRESS_EVERY_S = 5
+// Position writes stay sparse; smaller playback ticks catch sponsors near their start.
+const PROGRESS_TICK_S = 0.5
 const ENDED_WITHIN_S = 3
 // "Previous" this far into an episode restarts it instead.
 const RESTART_AFTER_S = 5
@@ -33,7 +37,16 @@ let ctx = null
 
 export async function attachPlayer({ store, local }) {
 	if (ctx !== null) return
-	ctx = { store, local, loaded: null, playing: false, wantPlay: false, lastSaved: -1, syncing: Promise.resolve() }
+	ctx = {
+		store,
+		local,
+		loaded: null,
+		playing: false,
+		wantPlay: false,
+		lastSaved: -1,
+		skipping: false,
+		syncing: Promise.resolve(),
+	}
 	try {
 		await TrackPlayer.setupPlayer({
 			// media3 owns audio focus — calls, navigation prompts, other apps —
@@ -60,6 +73,7 @@ export async function attachPlayer({ store, local }) {
 	local.addValueListener(LOCAL_KEYS.token, sync)
 
 	TrackPlayer.addEventListener(Event.PlaybackProgressUpdated, ({ position }) => {
+		if (skipSponsor(position)) return
 		if (Math.abs(position - ctx.lastSaved) >= PROGRESS_EVERY_S - 1) savePosition(position)
 	})
 	TrackPlayer.addEventListener(Event.PlaybackState, onState)
@@ -94,7 +108,7 @@ async function applyOptions() {
 		],
 		forwardJumpInterval: SKIP_FORWARD_S,
 		backwardJumpInterval: SKIP_BACK_S,
-		progressUpdateEventInterval: PROGRESS_EVERY_S,
+		progressUpdateEventInterval: PROGRESS_TICK_S,
 	})
 }
 
@@ -187,16 +201,38 @@ async function startPlaying() {
 
 /**
  * Where an episode picks up: its saved position, unless that was the end —
- * and past its intro, if it would start in one and Skip intros is on. Only
- * here, as it loads: seeking back into an intro plays it.
+ * and past its intro or a sponsor at its starting point when those are on.
+ * Intro skipping only happens here: seeking back into an intro plays it.
  */
 function resumeAt(id) {
 	const row = ctx.store.getRow(TABLES.items, id)
 	const duration = Number(row.duration) || 0
 	const saved = Number(row.position) || 0
-	const position = duration > 0 && saved >= duration - ENDED_WITHIN_S ? 0 : saved
-	const intro = setting(ctx.store.getValues(), VALUES.skipIntro) ? introEnd(parseChapters(row)) : 0
-	return Math.max(position, intro)
+	let position = duration > 0 && saved >= duration - ENDED_WITHIN_S ? 0 : saved
+	const values = ctx.store.getValues()
+	const intro = setting(values, VALUES.skipIntro) ? introEnd(parseChapters(row)) : 0
+	position = Math.max(position, intro)
+	if (setting(values, VALUES.skipSponsors)) {
+		position = Math.max(position, sponsorEnd(parseSponsorSegments(row), position))
+	}
+	return position
+}
+
+/** Jump past a sponsor containing this position. Returns whether a jump started. */
+export function skipSponsor(position, seek = seekTo) {
+	if (!ctx || ctx.skipping || !setting(ctx.store.getValues(), VALUES.skipSponsors)) return false
+	const id = ctx.loaded?.id
+	if (!id || !ctx.store.hasRow(TABLES.items, id)) return false
+	const end = sponsorEnd(parseSponsorSegments(ctx.store.getRow(TABLES.items, id)), position)
+	if (end === 0) return false
+	ctx.skipping = true
+	Promise.resolve()
+		.then(() => seek(end))
+		.catch((error) => console.warn("[player] sponsor skip failed", error))
+		.finally(() => {
+			ctx.skipping = false
+		})
+	return true
 }
 
 // ---- player → store -------------------------------------------------------
