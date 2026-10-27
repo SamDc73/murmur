@@ -21,6 +21,7 @@ function fakeTools(overrides = {}) {
 	return {
 		files,
 		probe: async () => ({ id: "dQw4w9WgXcQ", title: "Hello", duration: 100, channel: "Ch" }),
+		sponsorSegments: async () => [],
 		download: async (item, onProgress) => {
 			onProgress({ downloaded: 50, total: 100 })
 			const name = `${item.itemId}.${item.kind === "video" ? "mp4" : "m4a"}`
@@ -573,6 +574,64 @@ describe("transcripts", () => {
 		await new Promise((r) => setTimeout(r, 300))
 		expect(probes).toBe(1)
 		expect(store.getCell(TABLES.items, "old", "captionLang")).toBe("")
+		pipeline.stop()
+	})
+
+	test("SponsorBlock fetches new items and old items when the setting is turned on", async () => {
+		const store = createMergeableStore("t")
+		const calls = []
+		const tools = fakeTools({
+			sponsorSegments: async (videoId) => {
+				calls.push(videoId)
+				return [{ start: 12, end: 34 }]
+			},
+		})
+		const pipeline = createPipeline({ store, config: { ...config, downloadConcurrency: 0 }, tools, log: quiet })
+		store.setValue(VALUES.skipSponsors, false)
+		const {
+			sponsorSegments: _a,
+			sponsorSegmentsTried: _b,
+			...old
+		} = newItem({ url: "old", videoId: "AAAAAAAAAAA", order: "a0", addedAt: 1 })
+		// A row from before SponsorBlock existed, added while the setting was off.
+		store.setRow(TABLES.items, "old", { ...old, resolvedAt: 1, title: "Old" })
+		pipeline.start()
+		await new Promise((resolve) => setTimeout(resolve, 300))
+		expect(calls).toEqual([])
+
+		store.setValue(VALUES.skipSponsors, true)
+		await until(() => store.getCell(TABLES.items, "old", "sponsorSegmentsTried") > 0)
+		expect(JSON.parse(store.getCell(TABLES.items, "old", "sponsorSegments"))).toEqual([{ start: 12, end: 34 }])
+
+		store.setRow(TABLES.items, "new", {
+			...newItem({ url: "new", videoId: "BBBBBBBBBBB", order: "a1", addedAt: 2 }),
+			resolvedAt: 1,
+		})
+		await until(() => store.getCell(TABLES.items, "new", "sponsorSegmentsTried") > 0)
+		await new Promise((resolve) => setTimeout(resolve, 300))
+		expect(calls).toEqual(["AAAAAAAAAAA", "BBBBBBBBBBB"])
+		pipeline.stop()
+	})
+
+	test("a failed SponsorBlock lookup is optional and is not retried in a loop", async () => {
+		const store = createMergeableStore("t")
+		let calls = 0
+		const tools = fakeTools({
+			sponsorSegments: async () => {
+				calls++
+				throw new Error("HTTP 503")
+			},
+		})
+		const pipeline = createPipeline({ store, config: { ...config, downloadConcurrency: 0 }, tools, log: quiet })
+		store.setRow(TABLES.items, "one", {
+			...newItem({ url: "u", videoId: "dQw4w9WgXcQ", order: "a0", addedAt: 1 }),
+			resolvedAt: 1,
+		})
+		pipeline.start()
+		await until(() => store.getCell(TABLES.items, "one", "sponsorSegmentsTried") > 0)
+		await new Promise((resolve) => setTimeout(resolve, 300))
+		expect(calls).toBe(1)
+		expect(store.getCell(TABLES.items, "one", "error")).toBe("")
 		pipeline.stop()
 	})
 

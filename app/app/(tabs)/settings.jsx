@@ -122,11 +122,19 @@ function SaveButton({ onPress }) {
 
 function ListeningGroup() {
 	const skipIntro = useSetting(VALUES.skipIntro)
+	const skipSponsors = useSetting(VALUES.skipSponsors)
 	const { setSetting } = useActions()
 	return (
 		<Group title="Listening">
 			<Row label="Skip intros">
 				<Toggle value={skipIntro} onChange={(value) => setSetting(VALUES.skipIntro, value)} label="Skip intros" />
+			</Row>
+			<Row label="Skip sponsors">
+				<Toggle
+					value={skipSponsors}
+					onChange={(value) => setSetting(VALUES.skipSponsors, value)}
+					label="Skip sponsors"
+				/>
 			</Row>
 		</Group>
 	)

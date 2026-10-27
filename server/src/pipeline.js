@@ -17,6 +17,7 @@ import {
 } from "@murmur/core"
 import { uuidv7 } from "uuidv7"
 import { readDoc } from "./docs.js"
+import { fetchSponsorSegments } from "./sponsorblock.js"
 import { metadataFrom } from "./ytdlp.js"
 
 // What the server does with the store, and the only place it writes to it.
@@ -47,8 +48,8 @@ export function createPipeline({ store, config, tools, log = console }) {
 	let retryTimer = null
 	let roomTimer = null
 	const retryAfter = config.retryAfterMs ?? RETRY_AFTER_MS
-	// Transcripts share the probe slots: both are short yt-dlp calls.
-	const running = { probe: 0, download: 0, transcript: 0 }
+	// Transcripts and SponsorBlock lookups share the probe slots: all are short metadata calls.
+	const running = { probe: 0, download: 0, transcript: 0, sponsor: 0 }
 	const listeners = []
 	let knownItemIds = new Set(store.getRowIds(TABLES.items))
 
@@ -121,6 +122,16 @@ export function createPipeline({ store, config, tools, log = console }) {
 			if (holdsFile(copies[copyId(id, DEVICE_SERVER)])) work.push({ kind: "drop", id })
 		}
 
+		// This also covers rows added before the setting was turned on. The ranges
+		// live on the item, so every synced device can use them without another request.
+		if (setting(values, VALUES.skipSponsors)) {
+			for (const [id, row] of Object.entries(items)) {
+				if (row.videoId && !row.sponsorSegmentsTried && !inflight.has(`sponsor:${id}`)) {
+					work.push({ kind: "sponsor", id })
+				}
+			}
+		}
+
 		// Short of disk: nothing new starts. If an episode still needs its file,
 		// the downloaded one furthest down below it makes room.
 		const downloads = work.filter((job) => job.kind === "download")
@@ -140,9 +151,10 @@ export function createPipeline({ store, config, tools, log = console }) {
 	async function tick() {
 		cleanupRemoved()
 		for (const job of plan()) {
-			const shortJobs = running.probe + running.transcript
+			const shortJobs = running.probe + running.transcript + running.sponsor
 			if (job.kind === "probe" && shortJobs < config.probeConcurrency) start(job, probeItem)
 			else if (job.kind === "transcript" && shortJobs < config.probeConcurrency) start(job, transcriptItem)
+			else if (job.kind === "sponsor" && shortJobs < config.probeConcurrency) start(job, sponsorItem)
 			else if (job.kind === "download" && running.download < config.downloadConcurrency) start(job, downloadItem)
 			else if (job.kind === "evict") evictItem(job.id)
 			else if (job.kind === "drop") dropFile(job.id)
@@ -153,9 +165,9 @@ export function createPipeline({ store, config, tools, log = console }) {
 		}
 	}
 
-	// A transcript runs beside its item's download, so it has its own key.
+	// Metadata lookups run beside their item's download, so they have their own keys.
 	function start(job, fn) {
-		const key = job.kind === "transcript" ? `transcript:${job.id}` : job.id
+		const key = job.kind === "transcript" || job.kind === "sponsor" ? `${job.kind}:${job.id}` : job.id
 		inflight.add(key)
 		running[job.kind]++
 		fn(job)
@@ -343,6 +355,27 @@ export function createPipeline({ store, config, tools, log = console }) {
 		}
 	}
 
+	async function sponsorItem({ id }) {
+		const row = store.getRow(TABLES.items, id)
+		if (!row?.videoId || !setting(store.getValues(), VALUES.skipSponsors)) return
+		try {
+			const segments = await tools.sponsorSegments(row.videoId)
+			// Do not resurrect a removed row or put the old video's ranges on a changed one.
+			if (store.getCell(TABLES.items, id, "videoId") !== row.videoId) return
+			store.setPartialRow(TABLES.items, id, {
+				sponsorSegments: JSON.stringify(segments),
+				sponsorSegmentsTried: Date.now(),
+			})
+			log.info(`[pipeline] sponsors ${row.title || row.url}: ${segments.length}`)
+		} catch (error) {
+			// Optional metadata: leave playback alone, and do not retry on every store change.
+			if (store.getCell(TABLES.items, id, "videoId") === row.videoId) {
+				store.setCell(TABLES.items, id, "sponsorSegmentsTried", Date.now())
+			}
+			log.warn(`[pipeline] no sponsors for ${row.title || row.url}: ${String(error.message ?? error).slice(0, 200)}`)
+		}
+	}
+
 	function evictItem(id) {
 		removeFiles(id, { keepTranscript: true })
 		store.setPartialRow(TABLES.copies, copyId(id, DEVICE_SERVER), {
@@ -458,6 +491,7 @@ export function realTools(config, ytdlp) {
 		probe: (url, options) => ytdlp.probe(config, url, options),
 		download: (item, onProgress) => ytdlp.download(config, item, onProgress),
 		transcript: (item) => ytdlp.fetchTranscript(config, item),
+		sponsorSegments: fetchSponsorSegments,
 		listChannel: (url) => ytdlp.listChannel(config, url),
 		// For the stream relay (stream.js), not the pipeline.
 		hlsManifest: (url) => ytdlp.hlsManifest(config, url),

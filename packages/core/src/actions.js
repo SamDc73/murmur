@@ -111,7 +111,7 @@ export function queueActions(store, { newId }) {
 	/** Clear a failure so the server tries the link again. */
 	function retry(id) {
 		store.transaction(() => {
-			store.setPartialRow(TABLES.items, id, { error: "", resolvedAt: 0 })
+			store.setPartialRow(TABLES.items, id, { error: "", resolvedAt: 0, sponsorSegmentsTried: 0 })
 			const cid = copyId(id, DEVICE_SERVER)
 			if (store.getCell(TABLES.copies, cid, "state") === COPY_STATE.error) store.delRow(TABLES.copies, cid)
 		})

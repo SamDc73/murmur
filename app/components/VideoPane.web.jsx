@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { View } from "react-native"
 import TrackPlayer from "react-native-track-player"
-import { finished } from "../player/controller"
+import { finished, skipSponsor } from "../player/controller"
 import { giveBack, takeOver } from "../player/handoff"
 import { Text } from "./ui/Text"
 
@@ -27,6 +27,12 @@ export function VideoPane({ itemId, url, stream }) {
 		}
 		const events = ["timeupdate", "play", "pause"]
 		for (const name of events) video.addEventListener(name, keep)
+		const skip = () =>
+			skipSponsor(video.currentTime, (end) => {
+				video.currentTime = end
+				last.at = end
+			})
+		video.addEventListener("timeupdate", skip)
 		// To the end, like the audio: to History, and on to the next one.
 		video.addEventListener("ended", finished)
 
@@ -41,6 +47,7 @@ export function VideoPane({ itemId, url, stream }) {
 		return () => {
 			open = false
 			for (const name of events) video.removeEventListener(name, keep)
+			video.removeEventListener("timeupdate", skip)
 			video.removeEventListener("ended", finished)
 			giveBack(itemId, last.at, last.playing).catch(() => undefined)
 			hls?.destroy()

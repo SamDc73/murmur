@@ -45,6 +45,8 @@ export const VALUES = {
 	playbackRate: "playbackRate",
 	// An episode starting from the top starts past its intro (introEnd).
 	skipIntro: "skipIntro",
+	// SponsorBlock ranges are skipped throughout playback (sponsorEnd).
+	skipSponsors: "skipSponsors",
 }
 
 const DEFAULT_VALUES = {
@@ -56,6 +58,7 @@ const DEFAULT_VALUES = {
 	[VALUES.audioFormat]: "m4a",
 	[VALUES.playbackRate]: 1,
 	[VALUES.skipIntro]: true,
+	[VALUES.skipSponsors]: true,
 }
 
 export const AUDIO_FORMATS = ["m4a", "opus"]
@@ -81,6 +84,9 @@ export function newItem({ url, videoId, order, addedAt }) {
 		thumbnail: "",
 		description: "",
 		chapters: "[]",
+		sponsorSegments: "[]",
+		// A failed lookup is not retried on every store change; Retry asks again.
+		sponsorSegmentsTried: 0,
 		uploadDate: "",
 		// Captions: the track to fetch (from the probe), and the transcript's
 		// language once the server has saved it. `transcriptTried` stops a

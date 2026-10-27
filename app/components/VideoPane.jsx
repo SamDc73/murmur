@@ -2,7 +2,7 @@ import { useEventListener } from "expo"
 import { useVideoPlayer, VideoView } from "expo-video"
 import { useEffect, useRef } from "react"
 import { View } from "react-native"
-import { finished } from "../player/controller"
+import { finished, skipSponsor } from "../player/controller"
 import { giveBack, takeOver } from "../player/handoff"
 
 // Watching instead of listening. While open, the picture is the player:
@@ -26,6 +26,10 @@ export function VideoPane({ itemId, url, stream }) {
 	const last = useRef({ at: 0, playing: false })
 	useEventListener(player, "timeUpdate", ({ currentTime }) => {
 		last.current.at = currentTime
+		skipSponsor(currentTime, (end) => {
+			player.currentTime = end
+			last.current.at = end
+		})
 	})
 	useEventListener(player, "playingChange", ({ isPlaying }) => {
 		last.current.playing = isPlaying
