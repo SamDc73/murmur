@@ -29,11 +29,16 @@ const PROGRESS_TICK_S = 0.5
 const ENDED_WITHIN_S = 3
 // "Previous" this far into an episode restarts it instead.
 const RESTART_AFTER_S = 5
+// A position from another device this far past ours is a handoff to catch up to.
+const REMOTE_AHEAD_S = 5
 // The two jumps, on every surface: buttons, notification, headset.
 export const SKIP_BACK_S = 15
 export const SKIP_FORWARD_S = 30
 
 let ctx = null
+// Whether playback is on, for anyone outside the bridge (the sync socket stays
+// open while a phone plays in the background).
+const playingListeners = new Set()
 
 export async function attachPlayer({ store, local }) {
 	if (ctx !== null) return
@@ -173,6 +178,7 @@ async function loadCurrent() {
 			const { title, artist, artwork } = track
 			await TrackPlayer.updateMetadataForTrack(0, { title, artist, artwork }).catch(() => undefined)
 		}
+		await followRemote(track.id)
 		if (ctx.wantPlay) await startPlaying()
 		return
 	}
@@ -197,6 +203,22 @@ async function loadCurrent() {
 async function startPlaying() {
 	ctx.wantPlay = false
 	await TrackPlayer.play()
+}
+
+/**
+ * Catch up when another device moved the loaded episode forward. Its write
+ * arrives newer than ours, so it wins the merge; without this the player would
+ * keep its stale place and the next position it saves would undo the handoff.
+ * Our own writes land on `lastSaved`, so they never trip this, and it only ever
+ * seeks forward — a scrub back, or an older device's write, is left alone.
+ */
+async function followRemote(id) {
+	const saved = Number(ctx.store.getCell(TABLES.items, id, "position")) || 0
+	if (saved <= ctx.lastSaved + REMOTE_AHEAD_S) return
+	const { position } = await TrackPlayer.getProgress()
+	if (saved <= position + REMOTE_AHEAD_S) return
+	ctx.lastSaved = saved
+	await TrackPlayer.seekTo(saved)
 }
 
 /**
@@ -251,8 +273,21 @@ async function keepPosition(id) {
 	if (position > 0) ctx.store.setCell(TABLES.items, id, "position", Math.floor(position))
 }
 
+function setPlaying(playing) {
+	if (playing === ctx.playing) return
+	ctx.playing = playing
+	for (const listener of playingListeners) listener()
+}
+
+/** Whether playback is on now, and a way to hear when it changes. */
+export const isPlaying = () => (ctx ? ctx.playing : false)
+export function subscribePlaying(listener) {
+	playingListeners.add(listener)
+	return () => playingListeners.delete(listener)
+}
+
 async function onState({ state }) {
-	ctx.playing = state === State.Playing || state === State.Buffering || state === State.Loading
+	setPlaying(state === State.Playing || state === State.Buffering || state === State.Loading)
 	if (state === State.Ended) return finished()
 	const id = ctx.loaded?.id
 	if (!id || (state !== State.Paused && state !== State.Stopped)) return
