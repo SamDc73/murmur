@@ -20,6 +20,13 @@ import { useSync } from "../store/sync"
 import { FONTS } from "../theme/fonts"
 import "../global.css"
 
+// Opening straight to a screen — a notification tap lands on /now
+// (+native-intent.js) — anchors the stack to the tabs underneath, so Back
+// returns to the queue instead of leaving the app.
+// biome-ignore lint/style/useComponentExportOnlyModules: expo-router reads this route config beside the layout.
+// biome-ignore lint/style/useNamingConvention: expo-router's own export name.
+export const unstable_settings = { initialRouteName: "(tabs)" }
+
 SplashScreen.preventAutoHideAsync().catch(() => undefined)
 // Once per launch, before anything renders (a no-op on the web).
 registerDownloadTask()
