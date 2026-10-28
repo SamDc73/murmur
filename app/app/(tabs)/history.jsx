@@ -2,7 +2,7 @@ import { dayLabel, hours, timeOfDay, totalSeconds } from "@murmur/core"
 import EllipsisVertical from "lucide-react-native/icons/ellipsis-vertical"
 import ListPlus from "lucide-react-native/icons/list-plus"
 import { memo, useMemo } from "react"
-import { Pressable, SectionList, View } from "react-native"
+import { Pressable, ScrollView, View } from "react-native"
 import { EmptyState } from "../../components/EmptyState"
 import { ItemMenu } from "../../components/ItemMenu"
 import { NoteLine } from "../../components/NoteLine"
@@ -15,17 +15,20 @@ import { Text } from "../../components/ui/Text"
 import { useActions, useHistory, useItem } from "../../store/hooks"
 
 // What has been heard, newest first, a day at a time. Tap to hear it again;
-// + puts it back at the end of the queue.
+// + puts it back at the end of the queue. A plain scroll of every day, like
+// the queue: history is finite, so it needs no virtualizing — and a list that
+// recycled rows while a row asks for the full height of a cell it is still
+// being measured for never settles, which spins the screen.
 export default function HistoryScreen() {
 	const history = useHistory()
-	const sections = useMemo(() => {
+	const days = useMemo(() => {
 		const byDay = new Map()
 		for (const [id, row] of history) {
 			const label = dayLabel(row.doneAt)
 			if (!byDay.has(label)) byDay.set(label, [])
 			byDay.get(label).push(id)
 		}
-		return [...byDay.entries()].map(([title, data]) => ({ title, data }))
+		return [...byDay.entries()]
 	}, [history])
 
 	const lede =
@@ -36,34 +39,30 @@ export default function HistoryScreen() {
 	return (
 		<View className="flex-1 bg-background">
 			<ScreenHeader title="History" lede={lede} />
-			<SectionList
-				sections={sections}
-				keyExtractor={keyOf}
-				stickySectionHeadersEnabled={false}
-				ListEmptyComponent={
-					<EmptyState
-						title="Nothing played yet"
-						body="Finished episodes land here, and can go back to the queue any time."
-					/>
-				}
-				renderSectionHeader={renderDay}
-				renderSectionFooter={renderGap}
-				renderItem={renderRow}
-			/>
+			{history.length === 0 ? (
+				<EmptyState
+					title="Nothing played yet"
+					body="Finished episodes land here, and can go back to the queue any time."
+				/>
+			) : (
+				<ScrollView contentContainerClassName="pb-lg">
+					{days.map(([title, ids], day) => (
+						// A day's eyebrow sits md under the header, like Settings' first
+						// group; the days stand lg apart, like its groups.
+						<View key={title} className={cn(day > 0 && "pt-lg")}>
+							<View className={cn(COLUMN, "pb-xs")}>
+								<Text variant="eyebrow">{title}</Text>
+							</View>
+							{ids.map((id) => (
+								<HistoryRow key={id} id={id} />
+							))}
+						</View>
+					))}
+				</ScrollView>
+			)}
 		</View>
 	)
 }
-
-const keyOf = (id) => id
-// A day's eyebrow sits md under the header, like Settings' first group; the
-// days stand lg apart, like its groups.
-const renderDay = ({ section }) => (
-	<View className={cn(COLUMN, "pb-xs")}>
-		<Text variant="eyebrow">{section.title}</Text>
-	</View>
-)
-const renderGap = () => <View className="h-lg" />
-const renderRow = ({ item: id }) => <HistoryRow id={id} />
 
 // Memoized on its id and reading its own row: the list recomputes while
 // something plays (positions are saved every few seconds); the rows don't.
