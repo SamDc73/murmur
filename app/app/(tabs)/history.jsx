@@ -16,9 +16,7 @@ import { useActions, useHistory, useItem } from "../../store/hooks"
 
 // What has been heard, newest first, a day at a time. Tap to hear it again;
 // + puts it back at the end of the queue. A plain scroll of every day, like
-// the queue: history is finite, so it needs no virtualizing — and a list that
-// recycled rows while a row asks for the full height of a cell it is still
-// being measured for never settles, which spins the screen.
+// the queue — history is finite, so it needs no virtualizing.
 export default function HistoryScreen() {
 	const history = useHistory()
 	const days = useMemo(() => {
@@ -100,11 +98,14 @@ const HistoryRow = memo(function HistoryRow({ id }) {
 				itemId={id}
 				where="history"
 				trigger={
+					// Centred in the row at its own size, not h-full: a percentage height
+					// resolves against the scroll viewport, not the row, and stretched the
+					// ⋮ — and so the row — to fill the screen.
 					<IconButton
 						as={EllipsisVertical}
 						size="sm"
 						label="More"
-						className="h-full w-lg"
+						className="w-lg self-center"
 						iconClassName="text-on-surface-variant"
 					/>
 				}
